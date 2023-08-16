@@ -1,0 +1,8 @@
+.venv
+./acit/config/content/service-account.json
+./acit/config/content/client-secrets.json
+./acit/config/content/merchant-info.json
+./acit/api_datasets/data
+acit/api_datasets/data
+acit/config/content/
+acit/config/content/*
