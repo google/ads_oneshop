@@ -6,3 +6,4 @@ google-auth-httplib2
 google-cloud-bigquery
 google-cloud-storage
 six
+absl-py
