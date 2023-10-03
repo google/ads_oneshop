@@ -47,14 +47,14 @@ def bq_delete_table(client, project_name, dataset, table):
 if __name__ == "__main__":
   client = bigquery.Client()
 
-  bq_delete_data_blobs(constants.STORAGE_BUCKET, constants.ADS_STORAGE_FILE)
+  bq_delete_data_blobs(constants.STORAGE_BUCKET, constants.ADS_STORAGE_BLOB)
   bq_delete_data_blobs(constants.STORAGE_BUCKET,
-                       constants.PRODUCTS_STORAGE_FILE)
-  bq_delete_data_blobs(constants.STORAGE_BUCKET, constants.GEO_STORAGE_FILE)
+                       constants.PRODUCTS_STORAGE_BLOB)
+  bq_delete_data_blobs(constants.STORAGE_BUCKET, constants.GEO_STORAGE_BLOB)
   bq_delete_data_blobs(constants.STORAGE_BUCKET,
-                       constants.LANGUAGES_STORAGE_FILE)
+                       constants.LANGUAGES_STORAGE_BLOB)
   bq_delete_data_blobs(constants.STORAGE_BUCKET,
-                       constants.PRODUCTSTATUS_STORAGE_FILE)
+                       constants.PRODUCTSTATUS_STORAGE_BLOB)
   bq_delete_bucket(constants.STORAGE_BUCKET)
 
   # Delete the non-final tables

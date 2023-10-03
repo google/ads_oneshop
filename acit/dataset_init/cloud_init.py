@@ -48,18 +48,13 @@ if __name__ == "__main__":
   bq_create_dataset(bigquery_client, constants.PROJECT_NAME, constants.DATASET)
   bq_create_storage_bucket(constants.STORAGE_BUCKET)
 
-  bq_upload_blob(constants.STORAGE_BUCKET,
-                 "./acit/api_datasets/data/products_data/products.json",
-                 constants.PRODUCTS_STORAGE_FILE)
-  bq_upload_blob(constants.STORAGE_BUCKET,
-                 "./acit/api_datasets/data/products_data/productstatus.json",
-                 constants.PRODUCTSTATUS_STORAGE_FILE)
-  bq_upload_blob(constants.STORAGE_BUCKET,
-                 "./acit/api_datasets/data/geo_data/geo_targets.csv",
-                 constants.GEO_STORAGE_FILE)
-  bq_upload_blob(constants.STORAGE_BUCKET,
-                 "./acit/api_datasets/data/lang_data/language_codes.csv",
-                 constants.LANGUAGES_STORAGE_FILE)
-  bq_upload_blob(constants.STORAGE_BUCKET,
-                 "./acit/api_datasets/data/ads_data/impressions.csv",
-                 constants.ADS_STORAGE_FILE)
+  bq_upload_blob(constants.STORAGE_BUCKET, constants.PRODUCTS_STORAGE_FILE,
+                 constants.PRODUCTS_STORAGE_BLOB)
+  bq_upload_blob(constants.STORAGE_BUCKET, constants.PRODUCTSTATUS_STORAGE_FILE,
+                 constants.PRODUCTSTATUS_STORAGE_BLOB)
+  bq_upload_blob(constants.STORAGE_BUCKET, constants.GEO_STORAGE_FILE,
+                 constants.GEO_STORAGE_BLOB)
+  bq_upload_blob(constants.STORAGE_BUCKET, constants.LANGUAGES_STORAGE_FILE,
+                 constants.LANGUAGES_STORAGE_BLOB)
+  bq_upload_blob(constants.STORAGE_BUCKET, constants.ADS_STORAGE_FILE,
+                 constants.ADS_STORAGE_BLOB)
