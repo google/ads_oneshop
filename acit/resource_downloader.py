@@ -1,3 +1,16 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Download JSON resources from the Google discovery APIs."""
 
 from googleapiclient import discovery
@@ -14,53 +27,90 @@ from google import auth
 
 _API_NAME = flags.DEFINE_string('api_name', '', 'The discovery API name to use')
 
-_API_VERSION = flags.DEFINE_string('api_version', '',
-                                   'The discovery API version to use')
+_API_VERSION = flags.DEFINE_string(
+    'api_version', '', 'The discovery API version to use'
+)
 
-_RESOURCE_NAME = flags.DEFINE_string('resource_name', '',
-                                     'The resource name to call')
+_RESOURCE_NAME = flags.DEFINE_string(
+    'resource_name', '', 'The resource name to call'
+)
 
-_RESOURCE_METHOD = flags.DEFINE_string('resource_method', 'list',
-                                       'The resource method to use.')
+_RESOURCE_METHOD = flags.DEFINE_string(
+    'resource_method', 'list', 'The resource method to use.'
+)
 
-_PARAMS = flags.DEFINE_string('params', '',
-                              ('API parameters of the form "k1=v1;k2=v2". '
-                               'Values can also be injected from parent '
-                               'resources via placeholders @field_name'))
+_METADATA = flags.DEFINE_string(
+    'metadata',
+    '',
+    (
+        'Metadata of the form "k1=v1;k2=v2". '
+        'Injected into resources. '
+        'Values can also be injected from parent '
+        'resources via placeholders @field_name'
+    ),
+)
+
+_PARAMS = flags.DEFINE_string(
+    'params',
+    '',
+    (
+        'API parameters of the form "k1=v1;k2=v2". '
+        'Values can also be injected from parent '
+        'resources via placeholders @field_name'
+    ),
+)
 
 _PARENT_RESOURCE = flags.DEFINE_string(
-    'parent_resource', '', 'The parent resource to query, if applicable')
+    'parent_resource', '', 'The parent resource to query, if applicable'
+)
 
 _PARENT_PARAMS = flags.DEFINE_string(
-    'parent_params', '',
-    'The params to pass to the parent resource, if applicable')
+    'parent_params',
+    '',
+    'The params to pass to the parent resource, if applicable',
+)
 
 _RESULT_PATH = flags.DEFINE_string(
-    'result_path', 'resources',
-    'The path to the results in the response object.')
+    'result_path',
+    'resources',
+    'The path to the results in the response object.',
+)
+
+METADATA_KEY = 'downloaderMetadata'
 
 
-def get_results(collection: str,
-                params: Dict[str, Any],
-                resource_method: str,
-                result_path: str,
-                parent=None):
+def _substitute(params: Dict[str, Any], substitutions: Dict[str, Any]):
+  copy: Dict[str, Any] = {}
   for k, v in params.items():
     # May be an object already if consumed from another library
+    copy[k] = v
     if type(v) == str:
       # TODO: make this more intelligent i.e. in-JSON substitutions
       # May need to use another macro like @@
-      if parent:
+      if substitutions:
         if v.startswith('@'):
-          params[k] = parent.get(v.split('@')[1])
+          copy[k] = substitutions.get(v.split('@')[1])
       if v.startswith('{'):
-        params[k] = json.loads(v)
+        copy[k] = json.loads(v)
+  return copy
+
+
+def get_results(
+    collection: str,
+    params: Dict[str, Any],
+    resource_method: str,
+    result_path: str,
+    metadata: Dict[str, Any],
+):
   request = getattr(collection(), resource_method)(**params)
   while request:
     response = request.execute()
-    yield from response.get(result_path, [])
-    request = getattr(collection(), f'{resource_method}_next')(request,
-                                                               response)
+    for result in response.get(result_path, []):
+      result[METADATA_KEY] = metadata or {}
+      yield result
+    request = getattr(collection(), f'{resource_method}_next')(
+        request, response
+    )
 
 
 def parse_params(param_input):
@@ -72,19 +122,36 @@ def parse_params(param_input):
   return params
 
 
-def download_resources(client, resource_name: str, params: Dict[str, Any],
-                       parent_resource: str, parent_params: Dict[str, Any],
-                       resource_method: list,
-                       result_path: str) -> Iterable[Any]:
+def download_resources(
+    client,
+    resource_name: str,
+    params: Dict[str, Any],
+    parent_resource: str,
+    parent_params: Dict[str, Any],
+    resource_method: list,
+    result_path: str,
+    metadata: Dict[str, Any],
+) -> Iterable[Any]:
   collection = getattr(client, resource_name)
   if parent_resource:
     parent_collection = getattr(client, parent_resource)
-    parents = get_results(parent_collection, parent_params, 'list', 'resources')
+    parents = get_results(
+        parent_collection, parent_params, 'list', 'resources', metadata
+    )
     for parent in parents:
-      yield from get_results(collection, params, resource_method, result_path,
-                             parent)
+      substituted_params = _substitute(params, parent)
+      substituted_metadata = _substitute(metadata, parent)
+      yield from get_results(
+          collection,
+          substituted_params,
+          resource_method,
+          result_path,
+          substituted_metadata,
+      )
   else:
-    yield from get_results(collection, params, resource_method, result_path)
+    yield from get_results(
+        collection, params, resource_method, result_path, metadata
+    )
 
 
 def main(_):
@@ -103,9 +170,17 @@ def main(_):
   params = parse_params(_PARAMS.value)
   parent_resource = _PARENT_RESOURCE.value
   parent_params = parse_params(_PARENT_PARAMS.value)
-  for result in download_resources(client, resource_name, params,
-                                   parent_resource, parent_params,
-                                   resource_method, result_path):
+  metadata = parse_params(_METADATA.value)
+  for result in download_resources(
+      client,
+      resource_name,
+      params,
+      parent_resource,
+      parent_params,
+      resource_method,
+      result_path,
+      metadata,
+  ):
     print(json.dumps(result))
 
 

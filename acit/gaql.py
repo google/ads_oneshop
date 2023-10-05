@@ -40,22 +40,36 @@ _LOGIN_CUSTOMER_ID = flags.DEFINE_string(
     'login_customer_id',
     None,
     'The login customer ID to authenticate against',
-    required=True)
+    required=True,
+)
 
 _ROOT_CUSTOMER_ID = flags.DEFINE_string(
-    'root_customer_id', '', ('The root customer ID to query accounts below. '
-                             'If not specified, use the login customer ID.'))
+    'root_customer_id',
+    '',
+    (
+        'The root customer ID to query accounts below. '
+        'If not specified, use the login customer ID.'
+    ),
+)
 
-_QUERY = flags.DEFINE_string('query', '',
-                             ('The GAQL query to run against all accounts. '
-                              'If not specified, returns all campaigns.'))
+_QUERY = flags.DEFINE_string(
+    'query',
+    '',
+    (
+        'The GAQL query to run against all accounts. '
+        'If not specified, returns all campaigns.'
+    ),
+)
 
 _OUTPUT_DIRECTORY = flags.DEFINE_string(
-    'output_dir', '', 'The directory to output leaf query results.')
+    'output_dir', '', 'The directory to output leaf query results.'
+)
 
 _PREFIX = flags.DEFINE_string(
-    'prefix', 'google-ads-gaql',
-    'The prefix to add to each query file. Useful for selecting files.')
+    'prefix',
+    'google-ads-gaql',
+    'The prefix to add to each query file. Useful for selecting files.',
+)
 
 
 # TODO: Add flag for querying a single account
@@ -65,10 +79,9 @@ class QueryMode(enum.Enum):
   ALL = 'all'
 
 
-_MODE = flags.DEFINE_enum_class('mode',
-                                QueryMode.LEAVES,
-                                enum_class=QueryMode,
-                                help='The query mode')
+_MODE = flags.DEFINE_enum_class(
+    'mode', QueryMode.LEAVES, enum_class=QueryMode, help='The query mode'
+)
 
 
 def get_children_query(mode: QueryMode = QueryMode.LEAVES):
@@ -78,7 +91,8 @@ def get_children_query(mode: QueryMode = QueryMode.LEAVES):
   if mode == QueryMode.MCCS:
     is_manager = 'AND customer_client.manager = true'
 
-  return textwrap.dedent(f"""\
+  return textwrap.dedent(
+      f"""\
   SELECT
     customer_client.id,
     customer_client.descriptive_name,
@@ -87,17 +101,20 @@ def get_children_query(mode: QueryMode = QueryMode.LEAVES):
   FROM customer_client
   WHERE
     customer_client.status = 'ENABLED'
-    {is_manager}""")
+    {is_manager}"""
+  )
 
 
-GAQL_CAMPAIGNS = textwrap.dedent("""\
+GAQL_CAMPAIGNS = textwrap.dedent(
+    """\
   SELECT
     customer.id,
     customer.descriptive_name,
     campaign.id,
     campaign.name,
     campaign.status
-  FROM campaign""")
+  FROM campaign"""
+)
 
 
 def get_directory_path(orig_path: str):
@@ -105,55 +122,66 @@ def get_directory_path(orig_path: str):
     orig_path = os.path.curdir
   path = os.path.realpath(os.path.expandvars(os.path.expanduser(orig_path)))
   if not os.path.isdir(path):
-    raise ValueError('Provided path does not exist or is not a folder: %s' %
-                     path)
+    raise ValueError(
+        'Provided path does not exist or is not a folder: %s' % path
+    )
   return path
 
 
-def query_to_file(customer_id: str,
-                  query: str,
-                  ads_client: client.GoogleAdsClient,
-                  prefix: str = '',
-                  output_dir: str = ''):
+def query_to_file(
+    customer_id: str,
+    query: str,
+    ads_client: client.GoogleAdsClient,
+    prefix: str = '',
+    output_dir: str = '',
+):
   # TODO: Add a job ID either before or after the timestamp.
-  filename = (f'{prefix}'
-              f'-{datetime.datetime.now(datetime.timezone.utc).isoformat()}'
-              f'-{customer_id}.jsonlines')
+  filename = (
+      f'{prefix}'
+      f'-{datetime.datetime.now(datetime.timezone.utc).isoformat()}'
+      f'-{customer_id}.jsonlines'
+  )
   full_dir = get_directory_path(output_dir)
   path = os.path.join(full_dir, filename)
   with open(path, 'wt') as file:
     # TODO: Add retry logic or backoff for robustness
-    for row in ads.query(customer_id=customer_id,
-                         query=query,
-                         ads_client=ads_client):
+    for row in ads.query(
+        customer_id=customer_id, query=query, ads_client=ads_client
+    ):
       print(json_format.MessageToJson(row, indent=None), file=file)
 
 
-def run_query(query: str,
-              ads_client: client.GoogleAdsClient,
-              customer_id: str,
-              prefix: str = '',
-              output_dir='',
-              query_mode: QueryMode = QueryMode.LEAVES):
-
+def run_query(
+    query: str,
+    ads_client: client.GoogleAdsClient,
+    customer_id: str,
+    prefix: str = '',
+    output_dir='',
+    query_mode: QueryMode = QueryMode.LEAVES,
+):
   try:
     with futures.ProcessPoolExecutor(
-        mp_context=mp.get_context('spawn')) as executor:
-
+        mp_context=mp.get_context('spawn')
+    ) as executor:
       future_results: Dict[futures.Future[None], int] = {}
-      for row in ads.query(customer_id=customer_id,
-                           ads_client=ads_client,
-                           query=get_children_query(query_mode)):
+      for row in ads.query(
+          customer_id=customer_id,
+          ads_client=ads_client,
+          query=get_children_query(query_mode),
+      ):
         leaf_id = row.customer_client.id
-        future_results.update({
-            executor.submit(query_to_file,
-                            customer_id=str(leaf_id),
-                            query=query,
-                            ads_client=ads_client,
-                            prefix=prefix,
-                            output_dir=output_dir):
-                leaf_id
-        })
+        future_results.update(
+            {
+                executor.submit(
+                    query_to_file,
+                    customer_id=str(leaf_id),
+                    query=query,
+                    ads_client=ads_client,
+                    prefix=prefix,
+                    output_dir=output_dir,
+                ): leaf_id
+            }
+        )
 
       for completed in futures.as_completed(future_results):
         # Raise an exception if one occurred
@@ -167,11 +195,13 @@ def main(unused_argv):
   ads_client = client.GoogleAdsClient.load_from_storage()
   ads_client.login_customer_id = _LOGIN_CUSTOMER_ID.value
   query = _QUERY.value or GAQL_CAMPAIGNS
-  run_query(query,
-            ads_client,
-            _ROOT_CUSTOMER_ID.value or _LOGIN_CUSTOMER_ID.value,
-            prefix=_PREFIX.value,
-            output_dir=_OUTPUT_DIRECTORY.value)
+  run_query(
+      query,
+      ads_client,
+      _ROOT_CUSTOMER_ID.value or _LOGIN_CUSTOMER_ID.value,
+      prefix=_PREFIX.value,
+      output_dir=_OUTPUT_DIRECTORY.value,
+  )
 
 
 if __name__ == '__main__':

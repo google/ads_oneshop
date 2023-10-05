@@ -32,23 +32,34 @@ import json
 import pathlib
 import sys
 
-_CUSTOMER_IDS = flags.DEFINE_multi_string('customer_id', '',
-                                          ('The customer ID to query. '
-                                           'May be specified multiple times. '
-                                           'Expands MCCs.'))
+_CUSTOMER_IDS = flags.DEFINE_multi_string(
+    'customer_id',
+    '',
+    (
+        'The customer ID to query. '
+        'May be specified multiple times. '
+        'Expands MCCs.'
+    ),
+)
 
 _MERCHANT_CENTER_IDS = flags.DEFINE_multi_string(
-    'merchant_id', '', ('The Merchant account ID. '
-                        'Expands Multi-client accounts.'))
+    'merchant_id',
+    '',
+    ('The Merchant account ID. ' 'Expands Multi-client accounts.'),
+)
 
+# NOTE: Always add customer.id to a query for uniqueness.
+
+# NOTE: Merchant Center FK has the form of channel:language:feed_label:item_id
+# NOTE: Impressions will always be > 0 because this data is historical
 _GAQL_SHOPPING_PERFORMANCE_VIEW = """
 SELECT
   customer.id,
   segments.product_merchant_id,
   segments.product_channel,
-  segments.product_item_id,
-  segments.product_country,
   segments.product_language,
+  segments.product_feed_label,
+  segments.product_item_id,
   metrics.impressions,
   metrics.clicks,
   metrics.cost_micros,
@@ -57,28 +68,6 @@ SELECT
 FROM shopping_performance_view
 WHERE
   segments.date DURING LAST_7_DAYS
-  AND metrics.impressions > 0
-"""
-
-_GAQL_CAMPAIGNS = """
-SELECT
-  customer.id,
-  campaign.id,
-  campaign.advertising_channel_type,
-  campaign.advertising_channel_sub_type
-FROM campaign
-WHERE
-  campaign.status = 'ENABLED'
-"""
-
-_GAQL_AD_GROUPS = """
-SELECT
-  customer.id,
-  campaign.id,
-  ad_group.id
-FROM ad_group
-WHERE
-  ad_group.status = 'ENABLED'
 """
 
 # Non-PMax
@@ -91,7 +80,8 @@ SELECT
   ad_group_criterion.criterion_id,
   ad_group_criterion.negative,
   ad_group_criterion.status,
-  ad_group_criterion.display_name
+  ad_group_criterion.display_name,
+  ad_group_criterion.type
 FROM ad_group_criterion
 WHERE
   ad_group_criterion.status = 'ENABLED'
@@ -102,46 +92,49 @@ WHERE
 """
 
 # Asset group - PMax only
-_GAQL_ASSET_GROUP = """
-SELECT
-  campaign.id,
-  asset_group.id
-FROM asset_group
-WHERE
-  asset_group.status = 'ENABLED'
-"""
-
 # Asset group listing filter (No metrics)
 # TODO: Will this need to be recursive due to parent filters?
 #       Need to understand more.
-# TODO: Check against "UNSPECIFIED" product channel and condition.
-# TODO: product_item_id = offer_id
+# TODO: Check against 'UNSPECIFIED' product channel and condition.
+# NOTE: product_item_id = offer_id
+# NOTE: bidding_category = MC Google Product Category (<= 5)
+# NOTE: custom_attribute = MC Custom Label (<= 5), 1-indexed
+# NOTE: product_type = MC Product Category (<= 5), 1-indexed
+# NOTE: type:UNIT_INCLUDED = case value is targeted leaf; path provides parents.
+
+# NOTE: Channel Exclusivity isn't really a targeting thing.
+# TODO: Filter only for Ads channels, not free listings or similar.
+
 _GAQL_ASSET_GROUP_LISTING_FILTER = """
 SELECT
+  customer.id,
+  campaign.id,
   asset_group.id,
   asset_group_listing_group_filter.id,
   asset_group_listing_group_filter.parent_listing_group_filter,
   asset_group_listing_group_filter.type,
+  asset_group_listing_group_filter.case_value.product_brand.value,
+  asset_group_listing_group_filter.case_value.product_item_id.value,
+  asset_group_listing_group_filter.case_value.product_condition.condition,
+  asset_group_listing_group_filter.case_value.product_channel.channel,
   asset_group_listing_group_filter.case_value.product_custom_attribute.index,
   asset_group_listing_group_filter.case_value.product_custom_attribute.value,
   asset_group_listing_group_filter.case_value.product_type.level,
   asset_group_listing_group_filter.case_value.product_type.value,
   asset_group_listing_group_filter.case_value.product_bidding_category.level,
   asset_group_listing_group_filter.case_value.product_bidding_category.id,
-  asset_group_listing_group_filter.case_value.product_channel.channel,
-  asset_group_listing_group_filter.case_value.product_condition.condition,
-  asset_group_listing_group_filter.case_value.product_brand.value,
-  asset_group_listing_group_filter.case_value.product_item_id.value
+  asset_group_listing_group_filter.path
 FROM asset_group_listing_group_filter
+WHERE
+  asset_group.status = 'ENABLED'
+  AND campaign.status = 'ENABLED'
+  AND asset_group_listing_group_filter.type IN ('UNIT_INCLUDED', 'UNIT_EXCLUDED')
 """
 
 _ALL_GAQL = {
-    'ad_group': _GAQL_AD_GROUPS,
     'ad_group_criterion': _GAQL_AD_GROUP_CRITERIA,
-    'asset_group': _GAQL_ASSET_GROUP,
     'asset_group_listing_filter': _GAQL_ASSET_GROUP_LISTING_FILTER,
-    'campaign': _GAQL_CAMPAIGNS,
-    'shopping_performance_view': _GAQL_SHOPPING_PERFORMANCE_VIEW
+    'shopping_performance_view': _GAQL_SHOPPING_PERFORMANCE_VIEW,
 }
 
 _ACIT_OUTPUT_DIR = '/tmp/acit'
@@ -154,7 +147,7 @@ _ACIT_MC_OUTPUT_DIR = 'merchant_center'
 _ACIT_MC_RESOURCES = [
     # TODO: add MCA-specific resources
     'products',
-    'productstatuses'
+    'productstatuses',
 ]
 
 
@@ -180,11 +173,13 @@ def main(_):
       logging.info('...pulling resource %s...' % resource)
       output_dir = os.path.join(acit_ads_output_dir, customer_id, resource)
       pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-      gaql.run_query(query=query,
-                     ads_client=ads_client,
-                     customer_id=customer_id,
-                     prefix=f"{_ACIT_ADS_PREFIX}_{resource}",
-                     output_dir=output_dir)
+      gaql.run_query(
+          query=query,
+          ads_client=ads_client,
+          customer_id=customer_id,
+          prefix=f'{_ACIT_ADS_PREFIX}_{resource}',
+          output_dir=output_dir,
+      )
   logging.info('Done loading Ads data.')
 
   logging.info('Loading Merchant Center data...')
@@ -200,8 +195,9 @@ def main(_):
     merchant_api = discovery.build('content', 'v2.1', credentials=creds)
     for resource in _ACIT_MC_RESOURCES:
       logging.info('...pulling resource %s...' % resource)
-      output_file = os.path.join(acit_mc_output_dir, merchant_id, resource,
-                                 'rows.jsonlines')
+      output_file = os.path.join(
+          acit_mc_output_dir, merchant_id, resource, 'rows.jsonlines'
+      )
       pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
       with open(output_file, 'wt') as f:
         for result in resource_downloader.download_resources(
@@ -211,7 +207,9 @@ def main(_):
             parent_resource='',
             parent_params={},
             resource_method='list',
-            result_path='resources'):
+            result_path='resources',
+            metadata={'merchantId': merchant_id},
+        ):
           print(json.dumps(result), file=f)
   logging.info('Done loading Merchant Center data.')
 

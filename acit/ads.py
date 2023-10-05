@@ -31,10 +31,13 @@ def query(
     Result GoogleAdsRow protos
   """
 
-  stub = cast(service.GoogleAdsServiceClient,
-              ads_client.get_service('GoogleAdsService'))
-  req = google_ads_service.SearchGoogleAdsStreamRequest(customer_id=customer_id,
-                                                        query=query)
+  stub = cast(
+      service.GoogleAdsServiceClient,
+      ads_client.get_service('GoogleAdsService'),
+  )
+  req = google_ads_service.SearchGoogleAdsStreamRequest(
+      customer_id=customer_id, query=query
+  )
 
   responses = stub.search_stream(request=req)
 

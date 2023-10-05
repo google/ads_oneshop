@@ -35,7 +35,7 @@ def bq_delete_bucket(bucket_name):
 
 def bq_delete_table(client, project_name, dataset, table):
   try:
-    table_id = '{}.{}.{}'.format(project_name, dataset, table)
+    table_id = "{}.{}.{}".format(project_name, dataset, table)
 
     client.delete_table(table_id)
     print(f"Deleted Table '{table_id}'")
@@ -58,13 +58,33 @@ if __name__ == "__main__":
   bq_delete_bucket(constants.STORAGE_BUCKET)
 
   # Delete the non-final tables
-  bq_delete_table(client, constants.PROJECT_NAME, constants.DATASET,
-                  constants.TABLE_NAME_LANGUAGES)
-  bq_delete_table(client, constants.PROJECT_NAME, constants.DATASET,
-                  constants.TABLE_NAME_GEO)
-  bq_delete_table(client, constants.PROJECT_NAME, constants.DATASET,
-                  constants.TABLE_NAME_PRODUCTS)
-  bq_delete_table(client, constants.PROJECT_NAME, constants.DATASET,
-                  constants.TABLE_NAME_PRODUCTSTATUS)
-  bq_delete_table(client, constants.PROJECT_NAME, constants.DATASET,
-                  constants.TABLE_NAME_ADS)
+  bq_delete_table(
+      client,
+      constants.PROJECT_NAME,
+      constants.DATASET,
+      constants.TABLE_NAME_LANGUAGES,
+  )
+  bq_delete_table(
+      client,
+      constants.PROJECT_NAME,
+      constants.DATASET,
+      constants.TABLE_NAME_GEO,
+  )
+  bq_delete_table(
+      client,
+      constants.PROJECT_NAME,
+      constants.DATASET,
+      constants.TABLE_NAME_PRODUCTS,
+  )
+  bq_delete_table(
+      client,
+      constants.PROJECT_NAME,
+      constants.DATASET,
+      constants.TABLE_NAME_PRODUCTSTATUS,
+  )
+  bq_delete_table(
+      client,
+      constants.PROJECT_NAME,
+      constants.DATASET,
+      constants.TABLE_NAME_ADS,
+  )

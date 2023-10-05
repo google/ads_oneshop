@@ -12,9 +12,8 @@ def create_product_status_table(client, dataset, storage_bucket, table_name):
 
   try:
     table = client.get_table(table_ref)
-    print('table {} already exists.'.format(table))
+    print("table {} already exists.".format(table))
   except NotFound:
-
     job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField("kind", "STRING", mode="NULLABLE"),
@@ -80,7 +79,7 @@ def create_product_status_table(client, dataset, storage_bucket, table_name):
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
 
-    #Note: reference to file is gs://{bucket_name}/{file_name}
+    # Note: reference to file is gs://{bucket_name}/{file_name}
     uri = "gs://{}/Product_Status_Storage_Data".format(storage_bucket)
     load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
     load_job.result()
@@ -95,9 +94,8 @@ def create_products_table(client, dataset, storage_bucket, table_name):
 
   try:
     table = client.get_table(table_ref)
-    print('table {} already exists.'.format(table))
+    print("table {} already exists.".format(table))
   except NotFound:
-
     job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField("kind", "STRING", mode="NULLABLE"),
@@ -490,7 +488,7 @@ def create_products_table(client, dataset, storage_bucket, table_name):
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
 
-    #Note: reference to file is gs://{bucket_name}/{file_name}
+    # Note: reference to file is gs://{bucket_name}/{file_name}
     uri = "gs://{}/Products_Storage_Data".format(storage_bucket)
     load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
     load_job.result()
@@ -499,14 +497,14 @@ def create_products_table(client, dataset, storage_bucket, table_name):
   return table
 
 
-#Function to create a dataset in Table
+# Function to create a dataset in Table
 def create_ads_table(client, dataset, storage_bucket, table_name):
   dataset_ref = client.dataset(dataset)
   table_ref = dataset_ref.table(table_name)
 
   try:
     table = client.get_table(table_ref)
-    print('table {} already exists.'.format(table))
+    print("table {} already exists.".format(table))
   except NotFound:
     job_config = bigquery.LoadJobConfig(schema=[
         bigquery.SchemaField("manager_id", "INTEGER"),
@@ -545,7 +543,7 @@ def create_ads_table(client, dataset, storage_bucket, table_name):
         bigquery.SchemaField("campaign_status", "INTEGER"),
         bigquery.SchemaField("product_channel", "STRING"),
         bigquery.SchemaField("country", "STRING"),
-        bigquery.SchemaField("product_language", "STRING")
+        bigquery.SchemaField("product_language", "STRING"),
     ])
 
     # NOTE: reference to file is gs://{bucket_name}/{file_name}
@@ -563,7 +561,7 @@ def create_geo_table(client, dataset, storage_bucket, table_name):
 
   try:
     table = client.get_table(table_ref)
-    print('table {} already exists.'.format(table))
+    print("table {} already exists.".format(table))
   except NotFound:
     job_config = bigquery.LoadJobConfig(
         autodetect=True,
@@ -587,7 +585,7 @@ def create_languages_table(client, dataset, storage_bucket, table_name):
 
   try:
     table = client.get_table(table_ref)
-    print('table {} already exists.'.format(table))
+    print("table {} already exists.".format(table))
   except NotFound:
     job_config = bigquery.LoadJobConfig(
         autodetect=True,
@@ -808,19 +806,37 @@ def create_final_table(client, project_name, dataset):
 if __name__ == "__main__":
   bigquery_client = bigquery.Client()
 
-  create_products_table(bigquery_client, constants.DATASET,
-                        constants.STORAGE_BUCKET, constants.TABLE_NAME_PRODUCTS)
-  create_product_status_table(bigquery_client, constants.DATASET,
-                              constants.STORAGE_BUCKET,
-                              constants.TABLE_NAME_PRODUCTSTATUS)
-  create_geo_table(bigquery_client, constants.DATASET, constants.STORAGE_BUCKET,
-                   constants.TABLE_NAME_GEO)
-  create_languages_table(bigquery_client, constants.DATASET,
-                         constants.STORAGE_BUCKET,
-                         constants.TABLE_NAME_LANGUAGES)
+  create_products_table(
+      bigquery_client,
+      constants.DATASET,
+      constants.STORAGE_BUCKET,
+      constants.TABLE_NAME_PRODUCTS,
+  )
+  create_product_status_table(
+      bigquery_client,
+      constants.DATASET,
+      constants.STORAGE_BUCKET,
+      constants.TABLE_NAME_PRODUCTSTATUS,
+  )
+  create_geo_table(
+      bigquery_client,
+      constants.DATASET,
+      constants.STORAGE_BUCKET,
+      constants.TABLE_NAME_GEO,
+  )
+  create_languages_table(
+      bigquery_client,
+      constants.DATASET,
+      constants.STORAGE_BUCKET,
+      constants.TABLE_NAME_LANGUAGES,
+  )
 
-  create_ads_table(bigquery_client, constants.DATASET, constants.STORAGE_BUCKET,
-                   constants.TABLE_NAME_ADS)
+  create_ads_table(
+      bigquery_client,
+      constants.DATASET,
+      constants.STORAGE_BUCKET,
+      constants.TABLE_NAME_ADS,
+  )
 
   create_ads_final_table(bigquery_client, constants.PROJECT_NAME,
                          constants.DATASET)
