@@ -138,7 +138,7 @@ def run_query(query: str,
 
   try:
     with futures.ProcessPoolExecutor(
-        mp_context=mp.get_context('fork')) as executor:
+        mp_context=mp.get_context('spawn')) as executor:
 
       future_results: Dict[futures.Future[None], int] = {}
       for row in ads.query(customer_id=customer_id,

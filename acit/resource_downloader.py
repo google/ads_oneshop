@@ -6,7 +6,7 @@ from absl import app
 from absl import flags
 from absl import logging
 
-from typing import cast, Dict, Any
+from typing import cast, Dict, Any, Iterable
 
 import json
 import sys
@@ -74,18 +74,17 @@ def parse_params(param_input):
 
 def download_resources(client, resource_name: str, params: Dict[str, Any],
                        parent_resource: str, parent_params: Dict[str, Any],
-                       resource_method: list, result_path: str):
+                       resource_method: list,
+                       result_path: str) -> Iterable[Any]:
   collection = getattr(client, resource_name)
   if parent_resource:
     parent_collection = getattr(client, parent_resource)
     parents = get_results(parent_collection, parent_params, 'list', 'resources')
     for parent in parents:
-      for result in get_results(collection, params, resource_method,
-                                result_path, parent):
-        print(json.dumps(result))
+      yield from get_results(collection, params, resource_method, result_path,
+                             parent)
   else:
-    for result in get_results(collection, params, resource_method, result_path):
-      print(json.dumps(result))
+    yield from get_results(collection, params, resource_method, result_path)
 
 
 def main(_):
@@ -104,8 +103,10 @@ def main(_):
   params = parse_params(_PARAMS.value)
   parent_resource = _PARENT_RESOURCE.value
   parent_params = parse_params(_PARENT_PARAMS.value)
-  download_resources(client, resource_name, params, parent_resource,
-                     parent_params, resource_method, result_path)
+  for result in download_resources(client, resource_name, params,
+                                   parent_resource, parent_params,
+                                   resource_method, result_path):
+    print(json.dumps(result))
 
 
 if __name__ == '__main__':
