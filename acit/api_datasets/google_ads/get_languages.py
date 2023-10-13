@@ -35,45 +35,51 @@ _LANGUAGE_CODES_FILE = './acit/api_datasets/data/lang_data/language_codes.csv'
 
 
 def main(client, languages_file: str):
-  ga_service = client.get_service("GoogleAdsService")
+  ga_service = client.get_service('GoogleAdsService')
   with open(languages_file, 'wt') as f:
     writer = csv.writer(f)
-    writer.writerow([
-        'Language_Code', 'Criterion_ID', 'name', 'resource_name', 'targetable'
-    ])
+    writer.writerow(
+        ['Language_Code', 'Criterion_ID', 'name', 'resource_name', 'targetable']
+    )
     # Issues a search request using streaming.
-    stream = ga_service.search_stream(query=_QUERY,
-                                      customer_id=client.login_customer_id)
+    stream = ga_service.search_stream(
+        query=_QUERY, customer_id=client.login_customer_id
+    )
 
     for batch in stream:
       for row in batch.results:
-
         listOfDetails = [
-            row.language_constant.code, row.language_constant.id,
-            row.language_constant.name, row.language_constant.resource_name,
-            row.language_constant.targetable
+            row.language_constant.code,
+            row.language_constant.id,
+            row.language_constant.name,
+            row.language_constant.resource_name,
+            row.language_constant.targetable,
         ]
 
         writer.writerow(listOfDetails)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   googleads_client = GoogleAdsClient.load_from_storage(
-      os.path.expanduser("~/google-ads.yaml"))
+      os.path.expanduser('~/google-ads.yaml')
+  )
 
   parser = argparse.ArgumentParser(
-      description="Get language constants for Google Ads.")
+      description='Get language constants for Google Ads.'
+  )
 
   args = parser.parse_args()
 
   try:
     main(googleads_client, languages_file=_LANGUAGE_CODES_FILE)
   except GoogleAdsException as ex:
-    print(f'Request with ID "{ex.request_id}" failed with status '
-          f'"{ex.error.code().name}" and includes the following errors:')
+    print(
+        f'Request with ID "{ex.request_id}" failed with status '
+        f'"{ex.error.code().name}" and includes the following errors:'
+    )
     for error in ex.failure.errors:
       print(f'\tError with message "{error.message}".')
       if error.location:
         for field_path_element in error.location.field_path_elements:
-          print(f"\t\tOn field: {field_path_element.field_name}")
+          print(f'\t\tOn field: {field_path_element.field_name}')
     sys.exit(1)

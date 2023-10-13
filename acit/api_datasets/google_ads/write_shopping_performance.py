@@ -62,19 +62,24 @@ WHERE
 def write(client, customer_id, login_customer_id, impressions_file) -> None:
   try:
     ga_service = client.get_service("GoogleAdsService")
-    with open(impressions_file, 'a') as f:
+    with open(impressions_file, "a") as f:
       writer = csv.writer(f)
       # Issues a search request using streaming.
-      print(f'Processing Google Ads data for Customer ID {customer_id}...')
+      print(f"Processing Google Ads data for Customer ID {customer_id}...")
       stream = ga_service.search_stream(customer_id=customer_id, query=_QUERY)
 
       for batch in stream:
         for row in batch.results:
           listOfDetails = [
-              login_customer_id, f"{row.customer.id}", f"{row.campaign.id}",
-              f"{row.segments.product_item_id}", f"{row.metrics.clicks}",
-              f"{row.metrics.conversions}", f"{row.metrics.conversions_value}",
-              f"{row.metrics.impressions}", f"{row.segments.date}",
+              login_customer_id,
+              f"{row.customer.id}",
+              f"{row.campaign.id}",
+              f"{row.segments.product_item_id}",
+              f"{row.metrics.clicks}",
+              f"{row.metrics.conversions}",
+              f"{row.metrics.conversions_value}",
+              f"{row.metrics.impressions}",
+              f"{row.segments.date}",
               f"{row.segments.product_aggregator_id}",
               f"{row.segments.product_bidding_category_level1}",
               f"{row.segments.product_bidding_category_level2}",
@@ -94,19 +99,23 @@ def write(client, customer_id, login_customer_id, impressions_file) -> None:
               f"{row.segments.product_type_l2}",
               f"{row.segments.product_type_l3}",
               f"{row.segments.product_type_l4}",
-              f"{row.segments.product_type_l5}", f"{row.campaign.name}",
+              f"{row.segments.product_type_l5}",
+              f"{row.campaign.name}",
               f"{row.campaign.advertising_channel_type}",
               f"{row.campaign.advertising_channel_sub_type}",
-              f"{row.campaign.status}", f"{row.segments.product_channel}",
+              f"{row.campaign.status}",
+              f"{row.segments.product_channel}",
               f"{row.segments.product_country}",
-              f"{row.segments.product_language}"
+              f"{row.segments.product_language}",
           ]
 
           writer.writerow(listOfDetails)
 
   except GoogleAdsException as ex:
-    print(f'Request with ID "{ex.request_id}" failed with status '
-          f'"{ex.error.code().name}" and includes the following errors:')
+    print(
+        f'Request with ID "{ex.request_id}" failed with status '
+        f'"{ex.error.code().name}" and includes the following errors:'
+    )
     for error in ex.failure.errors:
       print(f'\tError with message "{error.message}".')
       if error.location:

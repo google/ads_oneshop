@@ -7,7 +7,8 @@ DATASET = "ACIT_Dataset_Repository"
 ADS_STORAGE_FILE = "./acit/api_datasets/data/ads_data/impressions.csv"
 PRODUCTS_STORAGE_FILE = "./acit/api_datasets/data/products_data/products.json"
 PRODUCTSTATUS_STORAGE_FILE = (
-    "./acit/api_datasets/data/products_data/productstatus.json")
+    "./acit/api_datasets/data/products_data/productstatus.json"
+)
 GEO_STORAGE_FILE = "./acit/api_datasets/data/geo_data/geo_targets.csv"
 LANGUAGES_STORAGE_FILE = "./acit/api_datasets/data/lang_data/language_codes.csv"
 

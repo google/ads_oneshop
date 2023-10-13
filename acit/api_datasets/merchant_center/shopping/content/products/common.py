@@ -58,17 +58,24 @@ def init(argv, doc, parents=None, sandbox=False):
   parser = argparse.ArgumentParser(
       description=doc,
       formatter_class=argparse.RawDescriptionHelpFormatter,
-      parents=parent_parsers)
-  parser.add_argument('--config_path',
-                      metavar='PATH',
-                      default=os.path.expanduser(_DEFAULT_CONFIG_PATH),
-                      help='configuration directory for the Shopping samples')
-  parser.add_argument('--noconfig',
-                      action='store_true',
-                      help='run samples with no configuration directory')
-  parser.add_argument('--log_file',
-                      metavar='FILE',
-                      help='filename for logging API requests and responses')
+      parents=parent_parsers,
+  )
+  parser.add_argument(
+      '--config_path',
+      metavar='PATH',
+      default=os.path.expanduser(_DEFAULT_CONFIG_PATH),
+      help='configuration directory for the Shopping samples',
+  )
+  parser.add_argument(
+      '--noconfig',
+      action='store_true',
+      help='run samples with no configuration directory',
+  )
+  parser.add_argument(
+      '--log_file',
+      metavar='FILE',
+      help='filename for logging API requests and responses',
+  )
   flags = parser.parse_args(argv[1:])
 
   if flags.log_file:
@@ -78,14 +85,16 @@ def init(argv, doc, parents=None, sandbox=False):
   config = {}
   if not flags.noconfig:
     if not os.path.isdir(flags.config_path):
-      raise Exception('Configuration directory "%s" does not exist.' %
-                      flags.config_path)
+      raise Exception(
+          'Configuration directory "%s" does not exist.' % flags.config_path
+      )
 
     content_path = os.path.join(flags.config_path, 'content')
     if not os.path.isdir(content_path):
       raise Exception(
-          'Content API configuration directory "%s" does not exist.' %
-          content_path)
+          'Content API configuration directory "%s" does not exist.'
+          % content_path
+      )
 
     config_file = os.path.join(content_path, 'merchant-info.json')
     if not os.path.isfile(config_file):
@@ -98,29 +107,36 @@ def init(argv, doc, parents=None, sandbox=False):
   credentials = auth.authorize(config)
   auth_http = google_auth_httplib2.AuthorizedHttp(
       credentials,
-      http=http.set_user_agent(http.build_http(), _constants.APPLICATION_NAME))
+      http=http.set_user_agent(http.build_http(), _constants.APPLICATION_NAME),
+  )
   if _constants.ENDPOINT_ENV_VAR in os.environ:
     # Strip off everything after the host/port in the URL.
     root_url = parse.urljoin(os.environ[_constants.ENDPOINT_ENV_VAR], '/')
     print('Using non-standard root for API discovery: %s' % root_url)
     discovery_url = root_url + '/discovery/v1/apis/{api}/{apiVersion}/rest'
-    service = discovery.build(_constants.SERVICE_NAME,
-                              _constants.SERVICE_VERSION,
-                              discoveryServiceUrl=discovery_url,
-                              http=auth_http)
+    service = discovery.build(
+        _constants.SERVICE_NAME,
+        _constants.SERVICE_VERSION,
+        discoveryServiceUrl=discovery_url,
+        http=auth_http,
+    )
     if sandbox:
-      sandbox_service = discovery.build(_constants.SERVICE_NAME,
-                                        _constants.SANDBOX_SERVICE_VERSION,
-                                        discoveryServiceUrl=discovery_url,
-                                        http=auth_http)
+      sandbox_service = discovery.build(
+          _constants.SERVICE_NAME,
+          _constants.SANDBOX_SERVICE_VERSION,
+          discoveryServiceUrl=discovery_url,
+          http=auth_http,
+      )
   else:
-    service = discovery.build(_constants.SERVICE_NAME,
-                              _constants.SERVICE_VERSION,
-                              http=auth_http)
+    service = discovery.build(
+        _constants.SERVICE_NAME, _constants.SERVICE_VERSION, http=auth_http
+    )
     if sandbox:
-      sandbox_service = discovery.build(_constants.SERVICE_NAME,
-                                        _constants.SANDBOX_SERVICE_VERSION,
-                                        http=auth_http)
+      sandbox_service = discovery.build(
+          _constants.SERVICE_NAME,
+          _constants.SANDBOX_SERVICE_VERSION,
+          http=auth_http,
+      )
 
   # Now that we have a service object, fill in anything missing from the
   # configuration using API calls.
@@ -164,40 +180,52 @@ def retrieve_remaining_config_from_api(service, config):
   authinfo = service.accounts().authinfo().execute()
   account_ids = authinfo.get('accountIdentifiers')
   if not account_ids:
-    raise Exception('The currently authenticated user does not have access to '
-                    'any Merchant Center accounts.')
+    raise Exception(
+        'The currently authenticated user does not have access to '
+        'any Merchant Center accounts.'
+    )
   if 'merchantId' not in config:
     first_account = account_ids[0]
     config['merchantId'] = int(first_account.get('merchantId', 0))
     if not config['merchantId']:
       config['merchantId'] = int(first_account['aggregatorId'])
-    print('Using Merchant Center %d for running samples.' %
-          config['merchantId'])
+    print(
+        'Using Merchant Center %d for running samples.' % config['merchantId']
+    )
   merchant_id = config['merchantId']
   config['isMCA'] = False
   # The requested Merchant Center can only be an MCA if we are a
   # user of it (and thus have access) and it is listed as an
   # aggregator in authinfo.
   for account_id in authinfo['accountIdentifiers']:
-    if ('aggregatorId' in account_id and
-        int(account_id['aggregatorId']) == merchant_id):
+    if (
+        'aggregatorId' in account_id
+        and int(account_id['aggregatorId']) == merchant_id
+    ):
       config['isMCA'] = True
       break
-    if ('merchantId' in account_id and
-        int(account_id['merchantId']) == merchant_id):
+    if (
+        'merchantId' in account_id
+        and int(account_id['merchantId']) == merchant_id
+    ):
       break
   if config['isMCA']:
     print('Merchant Center %d is an MCA.' % config['merchantId'])
   else:
     print('Merchant Center %d is not an MCA.' % config['merchantId'])
-  account = service.accounts().get(merchantId=merchant_id,
-                                   accountId=merchant_id).execute()
+  account = (
+      service.accounts()
+      .get(merchantId=merchant_id, accountId=merchant_id)
+      .execute()
+  )
   config['websiteUrl'] = account.get('websiteUrl')
   if not config['websiteUrl']:
     print('No website for Merchant Center %d.' % config['merchantId'])
   else:
-    print('Website for Merchant Center %d: %s' %
-          (config['merchantId'], config['websiteUrl']))
+    print(
+        'Website for Merchant Center %d: %s'
+        % (config['merchantId'], config['websiteUrl'])
+    )
 
 
 def is_mca(config):
@@ -220,8 +248,10 @@ def check_mca(config, should_be_mca, msg=None):
       raise Exception(msg)
     else:
       raise Exception(
-          'For this sample, you must%s use a multi-client account.' %
-          '' if should_be_mca else ' not')
+          'For this sample, you must%s use a multi-client account.' % ''
+          if should_be_mca
+          else ' not'
+      )
 
 
 def retry_request(req, slot_time=5.0, max_time=60.0):

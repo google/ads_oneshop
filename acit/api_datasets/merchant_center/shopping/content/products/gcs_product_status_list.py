@@ -21,7 +21,9 @@ from . import common
 # The maximum number of results to be returned in a page.
 MAX_PAGE_SIZE = 50
 
-_PRODUCT_STATUS_FILE = "./acit/api_datasets/data/products_data/productstatus.json"
+_PRODUCT_STATUS_FILE = (
+    './acit/api_datasets/data/products_data/productstatus.json'
+)
 
 
 def main(argv):
@@ -30,8 +32,9 @@ def main(argv):
   merchant_id = config['merchantId']
   common.check_mca(config, True)
 
-  account_request = service.accounts().list(merchantId=merchant_id,
-                                            maxResults=MAX_PAGE_SIZE)
+  account_request = service.accounts().list(
+      merchantId=merchant_id, maxResults=MAX_PAGE_SIZE
+  )
 
   with open(_PRODUCT_STATUS_FILE, 'wt') as f:
     while account_request is not None:
@@ -44,7 +47,8 @@ def main(argv):
         account_id = str(account['id'])
         print(account_id)
         product_status_request = service.productstatuses().list(
-            merchantId=account_id)
+            merchantId=account_id
+        )
         while product_status_request is not None:
           result2 = product_status_request.execute()
           products = result2.get('resources')
@@ -54,7 +58,8 @@ def main(argv):
           json_object = json.dumps(products)
           f.write(json_object)
           product_status_request = service.productstatuses().list_next(
-              product_status_request, result2)
+              product_status_request, result2
+          )
 
       account_request = service.accounts().list_next(account_request, result)
 

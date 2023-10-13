@@ -15,5 +15,5 @@ format:
 	  --pyink-indentation=2 \
 	  --line-length=80 \
 	  --pyink-use-majority-quotes \
-	  acit/ \
-	
+	  acit/
+

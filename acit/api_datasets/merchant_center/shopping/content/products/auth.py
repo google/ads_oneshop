@@ -50,14 +50,17 @@ def authorize(config):
   if 'path' not in config:
     print('Must use Application Default Credentials with no configuration.')
     sys.exit(1)
-  service_account_path = os.path.join(config['path'],
-                                      _constants.SERVICE_ACCOUNT_FILE)
-  client_secrets_path = os.path.join(config['path'],
-                                     _constants.CLIENT_SECRETS_FILE)
+  service_account_path = os.path.join(
+      config['path'], _constants.SERVICE_ACCOUNT_FILE
+  )
+  client_secrets_path = os.path.join(
+      config['path'], _constants.CLIENT_SECRETS_FILE
+  )
   if os.path.isfile(service_account_path):
     print('Using service account credentials from %s.' % service_account_path)
     return service_account.Credentials.from_service_account_file(
-        service_account_path, scopes=[_constants.CONTENT_API_SCOPE])
+        service_account_path, scopes=[_constants.CONTENT_API_SCOPE]
+    )
   elif os.path.isfile(client_secrets_path):
     print('Using OAuth2 client secrets from %s.' % client_secrets_path)
     storage = token_storage.Storage(config)
@@ -66,7 +69,8 @@ def authorize(config):
       return credentials
     client_config = token_storage.retrieve_client_config(config)
     auth_flow = flow.InstalledAppFlow.from_client_config(
-        client_config, scopes=[_constants.CONTENT_API_SCOPE])
+        client_config, scopes=[_constants.CONTENT_API_SCOPE]
+    )
     credentials = auth_flow.run_local_server(authorization_prompt_message='')
     storage.put(credentials)
     return credentials

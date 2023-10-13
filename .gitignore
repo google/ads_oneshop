@@ -10,3 +10,4 @@ acit/config/content/*
 .vscode/
 coverage.xml
 *.jsonlines
+__pycache__/

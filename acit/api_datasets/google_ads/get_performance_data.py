@@ -37,12 +37,12 @@ _GAQL_LEAF_ACCOUNTS = """
 def main(client, login_customer_id=None):
   """Gets performance data from all leaf accounts under a login Customer ID.
 
-    Args:
-      client: The Google Ads client.
-      login_customer_id: Optional manager account ID. If none provided, this
-      method will instead list the accounts accessible from the
-      authenticated Google Ads account.
-    """
+  Args:
+    client: The Google Ads client.
+    login_customer_id: Optional manager account ID. If none provided, this
+    method will instead list the accounts accessible from the
+    authenticated Google Ads account.
+  """
 
   googleads_service = client.get_service("GoogleAdsService")
   customer_service = client.get_service("CustomerService")
@@ -55,33 +55,39 @@ def main(client, login_customer_id=None):
     print("No manager ID is specified. Using accessible customer IDs.")
 
     customer_resource_names = (
-        customer_service.list_accessible_customers().resource_names)
+        customer_service.list_accessible_customers().resource_names
+    )
 
     for customer_resource_name in customer_resource_names:
       customer_id = googleads_service.parse_customer_path(
-          customer_resource_name)["customer_id"]
+          customer_resource_name
+      )["customer_id"]
       seed_customer_ids.append(customer_id)
 
   performance_file = "./acit/api_datasets/data/ads_data/impressions.csv"
   for seed_customer_id in seed_customer_ids:
-    response = googleads_service.search(customer_id=str(seed_customer_id),
-                                        query=_GAQL_LEAF_ACCOUNTS)
+    response = googleads_service.search(
+        customer_id=str(seed_customer_id), query=_GAQL_LEAF_ACCOUNTS
+    )
     for googleads_row in response:
       customer_client = googleads_row.customer_client
       customer_id = customer_client.id
-      write_shopping_performance.write(client, str(customer_id),
-                                       login_customer_id, performance_file)
+      write_shopping_performance.write(
+          client, str(customer_id), login_customer_id, performance_file
+      )
 
 
 if __name__ == "__main__":
   # GoogleAdsClient will read the google-ads.yaml configuration file in the
   # home directory if none is specified.
   googleads_client = GoogleAdsClient.load_from_storage(
-      os.path.expanduser("~/google-ads.yaml"))
+      os.path.expanduser("~/google-ads.yaml")
+  )
 
   parser = argparse.ArgumentParser(
       description="This example gets the account hierarchy of the specified "
-      "manager account and login customer ID.")
+      "manager account and login customer ID."
+  )
   # The following argument(s) should be provided to run the example.
   parser.add_argument(
       "-l",
@@ -99,8 +105,10 @@ if __name__ == "__main__":
   try:
     main(googleads_client, args.login_customer_id)
   except GoogleAdsException as ex:
-    print(f'Request with ID "{ex.request_id}" failed with status '
-          f'"{ex.error.code().name}" and includes the following errors:')
+    print(
+        f'Request with ID "{ex.request_id}" failed with status '
+        f'"{ex.error.code().name}" and includes the following errors:'
+    )
     for error in ex.failure.errors:
       print(f'\tError with message "{error.message}".')
       if error.location:

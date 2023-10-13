@@ -30,33 +30,40 @@ FROM
   geo_target_constant
 """
 
-_GEO_TARGETS_FILE = './acit/api_datasets/data/geo_data/geo_targets.csv'
+_GEO_TARGETS_FILE = "./acit/api_datasets/data/geo_data/geo_targets.csv"
 
 
 def main(client, geo_filename: str):
   ga_service = client.get_service("GoogleAdsService")
 
-  with open(geo_filename, 'wt') as f:
+  with open(geo_filename, "wt") as f:
     writer = csv.writer(f)
     writer.writerow([
-        'canonical_name', 'Country_Code', 'Criteria_ID', 'name',
-        'parent_geo_target', 'resource_name', 'status', 'target_type'
+        "canonical_name",
+        "Country_Code",
+        "Criteria_ID",
+        "name",
+        "parent_geo_target",
+        "resource_name",
+        "status",
+        "target_type",
     ])
     # Issues a search request using streaming.
-    stream = ga_service.search_stream(query=_QUERY,
-                                      customer_id=client.login_customer_id)
+    stream = ga_service.search_stream(
+        query=_QUERY, customer_id=client.login_customer_id
+    )
 
     for batch in stream:
       for row in batch.results:
-
         listOfDetails = [
             f"{row.geo_target_constant.canonical_name}",
             f"{row.geo_target_constant.country_code}",
-            f"{row.geo_target_constant.id}", f"{row.geo_target_constant.name}",
+            f"{row.geo_target_constant.id}",
+            f"{row.geo_target_constant.name}",
             f"{row.geo_target_constant.parent_geo_target}",
             f"{row.geo_target_constant.resource_name}",
             f"{row.geo_target_constant.status}",
-            f"{row.geo_target_constant.target_type}"
+            f"{row.geo_target_constant.target_type}",
         ]
 
         writer.writerow(listOfDetails)
@@ -66,18 +73,22 @@ if __name__ == "__main__":
   # GoogleAdsClient will read the google-ads.yaml configuration file in the
   # home directory if none is specified.
   googleads_client = GoogleAdsClient.load_from_storage(
-      os.path.expanduser("~/google-ads.yaml"))
+      os.path.expanduser("~/google-ads.yaml")
+  )
 
   parser = argparse.ArgumentParser(
-      description="Get geo constants for Google Ads")
+      description="Get geo constants for Google Ads"
+  )
 
   args = parser.parse_args()
 
   try:
     main(googleads_client, geo_filename=_GEO_TARGETS_FILE)
   except GoogleAdsException as ex:
-    print(f'Request with ID "{ex.request_id}" failed with status '
-          f'"{ex.error.code().name}" and includes the following errors:')
+    print(
+        f'Request with ID "{ex.request_id}" failed with status '
+        f'"{ex.error.code().name}" and includes the following errors:'
+    )
     for error in ex.failure.errors:
       print(f'\tError with message "{error.message}".')
       if error.location:

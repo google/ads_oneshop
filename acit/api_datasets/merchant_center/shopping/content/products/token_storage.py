@@ -48,7 +48,8 @@ class Storage(object):
           client_secret=client_info['client_secret'],
           refresh_token=token['refresh_token'],
           token_uri=client_info['token_uri'],
-          scopes=[_constants.CONTENT_API_SCOPE])
+          scopes=[_constants.CONTENT_API_SCOPE],
+      )
       # Access tokens aren't stored (and may be expired even if we did), so
       # we'll need to refresh to ensure we have valid credentials.
       try:
@@ -56,8 +57,10 @@ class Storage(object):
         print('Using stored credentials from %s.' % self._token_path())
         return credentials
       except google.auth.exceptions.RefreshError:
-        print('The stored credentials in the file %s cannot be refreshed, '
-              're-requesting access.' % self._token_path())
+        print(
+            'The stored credentials in the file %s cannot be refreshed, '
+            're-requesting access.' % self._token_path()
+        )
         return None
     except (IOError, ValueError, KeyError):
       return None
@@ -72,20 +75,21 @@ class Storage(object):
         'refresh_token': credentials.refresh_token,
     }
     with open(self._token_path(), 'w') as outfile:
-      json.dump(token,
-                outfile,
-                sort_keys=True,
-                indent=2,
-                separators=(',', ': '))
+      json.dump(
+          token, outfile, sort_keys=True, indent=2, separators=(',', ': ')
+      )
 
 
 def retrieve_client_config(config):
-  client_secrets_path = os.path.join(config['path'],
-                                     _constants.CLIENT_SECRETS_FILE)
+  client_secrets_path = os.path.join(
+      config['path'], _constants.CLIENT_SECRETS_FILE
+  )
   with open(client_secrets_path, 'r') as json_file:
     client_config_json = json.load(json_file)
   if 'installed' not in client_config_json:
-    print('Please read the note about OAuth2 client IDs in the '
-          'top-level README.')
+    print(
+        'Please read the note about OAuth2 client IDs in the '
+        'top-level README.'
+    )
     sys.exit(1)
   return client_config_json

@@ -25,54 +25,54 @@ def create_product_status_table(client, dataset, storage_bucket, table_name):
                 "RECORD",
                 mode="REPEATED",
                 fields=[
-                    bigquery.SchemaField("destination",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "destination", "STRING", mode="NULLABLE"
+                    ),
                     bigquery.SchemaField("status", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("approvedCountries",
-                                         "STRING",
-                                         mode="REPEATED"),
-                    bigquery.SchemaField("pendingCountries",
-                                         "STRING",
-                                         mode="REPEATED"),
-                    bigquery.SchemaField("disapprovedCountries",
-                                         "STRING",
-                                         mode="REPEATED"),
+                    bigquery.SchemaField(
+                        "approvedCountries", "STRING", mode="REPEATED"
+                    ),
+                    bigquery.SchemaField(
+                        "pendingCountries", "STRING", mode="REPEATED"
+                    ),
+                    bigquery.SchemaField(
+                        "disapprovedCountries", "STRING", mode="REPEATED"
+                    ),
                 ],
             ),
             bigquery.SchemaField("creationDate", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("lastUpdateDate", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("googleExpirationDate",
-                                 "STRING",
-                                 mode="NULLABLE"),
+            bigquery.SchemaField(
+                "googleExpirationDate", "STRING", mode="NULLABLE"
+            ),
             bigquery.SchemaField(
                 "itemLevelIssues",
                 "RECORD",
                 mode="REPEATED",
                 fields=[
                     bigquery.SchemaField("code", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("servability",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("resolution",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("attributeName",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("destination",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("description",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "servability", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "resolution", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "attributeName", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "destination", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "description", "STRING", mode="NULLABLE"
+                    ),
                     bigquery.SchemaField("detail", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("documentation",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("applicableCountries",
-                                         "STRING",
-                                         mode="REPEATED"),
+                    bigquery.SchemaField(
+                        "documentation", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "applicableCountries", "STRING", mode="REPEATED"
+                    ),
                 ],
             ),
         ],
@@ -109,12 +109,12 @@ def create_products_table(client, dataset, storage_bucket, table_name):
             bigquery.SchemaField("description", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("link", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("imageLink", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("additionalImageLinks",
-                                 "STRING",
-                                 mode="REPEATED"),
-            bigquery.SchemaField("lifestyleImageLinks",
-                                 "STRING",
-                                 mode="REPEATED"),
+            bigquery.SchemaField(
+                "additionalImageLinks", "STRING", mode="REPEATED"
+            ),
+            bigquery.SchemaField(
+                "lifestyleImageLinks", "STRING", mode="REPEATED"
+            ),
             bigquery.SchemaField("contentLanguage", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("targetCountry", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("feedLabel", "STRING", mode="NULLABLE"),
@@ -127,16 +127,16 @@ def create_products_table(client, dataset, storage_bucket, table_name):
             bigquery.SchemaField("color", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("condition", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("gender", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("googleProductCategory",
-                                 "STRING",
-                                 mode="NULLABLE"),
+            bigquery.SchemaField(
+                "googleProductCategory", "STRING", mode="NULLABLE"
+            ),
             bigquery.SchemaField("gtin", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("material", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("mpn", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("pattern", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("salePriceEffectiveDate",
-                                 "STRING",
-                                 mode="NULLABLE"),
+            bigquery.SchemaField(
+                "salePriceEffectiveDate", "STRING", mode="NULLABLE"
+            ),
             bigquery.SchemaField("sizes", "STRING", mode="REPEATED"),
             bigquery.SchemaField("sizeSystem", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("sizeType", "STRING", mode="NULLABLE"),
@@ -151,38 +151,38 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                         "RECORD",
                         mode="NULLABLE",
                         fields=[
-                            bigquery.SchemaField("currency",
-                                                 "STRING",
-                                                 mode="NULLABLE"),
-                            bigquery.SchemaField("value",
-                                                 "STRING",
-                                                 mode="NULLABLE"),
+                            bigquery.SchemaField(
+                                "currency", "STRING", mode="NULLABLE"
+                            ),
+                            bigquery.SchemaField(
+                                "value", "STRING", mode="NULLABLE"
+                            ),
                         ],
                     ),
                     bigquery.SchemaField("country", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("region", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("service", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("locationId",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("locationGroupName",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("postalCode",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("minHandlingTime",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("maxHandlingTime",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("minTransitTime",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("maxTransitTime",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "locationId", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "locationGroupName", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "postalCode", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "minHandlingTime", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "maxHandlingTime", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "minTransitTime", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "maxTransitTime", "STRING", mode="NULLABLE"
+                    ),
                 ],
             ),
             bigquery.SchemaField("multipack", "STRING", mode="NULLABLE"),
@@ -193,8 +193,9 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                 fields=[
                     bigquery.SchemaField("name", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("value", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("groupValues", "JSON",
-                                         mode="REPEATED"),
+                    bigquery.SchemaField(
+                        "groupValues", "JSON", mode="REPEATED"
+                    ),
                 ],
             ),
             bigquery.SchemaField("customLabel0", "STRING", mode="NULLABLE"),
@@ -207,15 +208,15 @@ def create_products_table(client, dataset, storage_bucket, table_name):
             bigquery.SchemaField("shippingLabel", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("isBundle", "BOOL", mode="NULLABLE"),
             bigquery.SchemaField("displayAdsId", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("displayAdsSimilarIds",
-                                 "STRING",
-                                 mode="REPEATED"),
+            bigquery.SchemaField(
+                "displayAdsSimilarIds", "STRING", mode="REPEATED"
+            ),
             bigquery.SchemaField("displayAdsTitle", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("displayAdsLink", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("displayAdsValue", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("sellOnGoogleQuantity",
-                                 "STRING",
-                                 mode="NULLABLE"),
+            bigquery.SchemaField(
+                "sellOnGoogleQuantity", "STRING", mode="NULLABLE"
+            ),
             bigquery.SchemaField("promotionIds", "STRING", mode="REPEATED"),
             bigquery.SchemaField("maxHandlingTime", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("minHandlingTime", "STRING", mode="NULLABLE"),
@@ -230,12 +231,12 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                         "RECORD",
                         mode="NULLABLE",
                         fields=[
-                            bigquery.SchemaField("currency",
-                                                 "STRING",
-                                                 mode="NULLABLE"),
-                            bigquery.SchemaField("value",
-                                                 "NUMERIC",
-                                                 mode="NULLABLE"),
+                            bigquery.SchemaField(
+                                "currency", "STRING", mode="NULLABLE"
+                            ),
+                            bigquery.SchemaField(
+                                "value", "NUMERIC", mode="NULLABLE"
+                            ),
                         ],
                     ),
                 ],
@@ -246,9 +247,9 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                 mode="NULLABLE",
                 fields=[
                     bigquery.SchemaField("name", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("pointsValue",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "pointsValue", "STRING", mode="NULLABLE"
+                    ),
                     bigquery.SchemaField("ratio", "NUMERIC", mode="NULLABLE"),
                 ],
             ),
@@ -279,34 +280,34 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                     bigquery.SchemaField("value", "NUMERIC", mode="NULLABLE"),
                 ],
             ),
-            bigquery.SchemaField("includedDestinations",
-                                 "STRING",
-                                 mode="REPEATED"),
-            bigquery.SchemaField("excludedDestinations",
-                                 "STRING",
-                                 mode="REPEATED"),
+            bigquery.SchemaField(
+                "includedDestinations", "STRING", mode="REPEATED"
+            ),
+            bigquery.SchemaField(
+                "excludedDestinations", "STRING", mode="REPEATED"
+            ),
             bigquery.SchemaField("adsGrouping", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("adsLabels", "STRING", mode="REPEATED"),
             bigquery.SchemaField("adsRedirect", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("productTypes", "STRING", mode="REPEATED"),
             bigquery.SchemaField("ageGroup", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("additionalSizeType",
-                                 "STRING",
-                                 mode="NULLABLE"),
-            bigquery.SchemaField("energyEfficiencyClass",
-                                 "STRING",
-                                 mode="NULLABLE"),
-            bigquery.SchemaField("minEnergyEfficiencyClass",
-                                 "STRING",
-                                 mode="NULLABLE"),
-            bigquery.SchemaField("maxEnergyEfficiencyClass",
-                                 "STRING",
-                                 mode="NULLABLE"),
+            bigquery.SchemaField(
+                "additionalSizeType", "STRING", mode="NULLABLE"
+            ),
+            bigquery.SchemaField(
+                "energyEfficiencyClass", "STRING", mode="NULLABLE"
+            ),
+            bigquery.SchemaField(
+                "minEnergyEfficiencyClass", "STRING", mode="NULLABLE"
+            ),
+            bigquery.SchemaField(
+                "maxEnergyEfficiencyClass", "STRING", mode="NULLABLE"
+            ),
             bigquery.SchemaField("taxCategory", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("transitTimeLabel", "STRING", mode="NULLABLE"),
-            bigquery.SchemaField("shoppingAdsExcludedCountries",
-                                 "STRING",
-                                 mode="REPEATED"),
+            bigquery.SchemaField(
+                "shoppingAdsExcludedCountries", "STRING", mode="REPEATED"
+            ),
             bigquery.SchemaField("pickupMethod", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("pickupSla", "STRING", mode="NULLABLE"),
             bigquery.SchemaField("linkTemplate", "STRING", mode="NULLABLE"),
@@ -315,39 +316,40 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                 "RECORD",
                 mode="REPEATED",
                 fields=[
-                    bigquery.SchemaField("sectionName",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("attributeName",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("attributeValue",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "sectionName", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "attributeName", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "attributeValue", "STRING", mode="NULLABLE"
+                    ),
                 ],
             ),
-            bigquery.SchemaField("productHighlights", "STRING",
-                                 mode="REPEATED"),
+            bigquery.SchemaField(
+                "productHighlights", "STRING", mode="REPEATED"
+            ),
             bigquery.SchemaField(
                 "subscriptionCost",
                 "RECORD",
                 mode="NULLABLE",
                 fields=[
                     bigquery.SchemaField("period", "STRING", mode="NULLABLE"),
-                    bigquery.SchemaField("periodLength",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "periodLength", "STRING", mode="NULLABLE"
+                    ),
                     bigquery.SchemaField(
                         "amount",
                         "RECORD",
                         mode="NULLABLE",
                         fields=[
-                            bigquery.SchemaField("currency",
-                                                 "STRING",
-                                                 mode="NULLABLE"),
-                            bigquery.SchemaField("value",
-                                                 "NUMERIC",
-                                                 mode="NULLABLE"),
+                            bigquery.SchemaField(
+                                "currency", "STRING", mode="NULLABLE"
+                            ),
+                            bigquery.SchemaField(
+                                "value", "NUMERIC", mode="NULLABLE"
+                            ),
                         ],
                     ),
                 ],
@@ -360,20 +362,23 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                 "RECORD",
                 mode="REPEATED",
                 fields=[
-                    bigquery.SchemaField("propertyName",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("textValue", "STRING",
-                                         mode="REPEATED"),
+                    bigquery.SchemaField(
+                        "propertyName", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "textValue", "STRING", mode="REPEATED"
+                    ),
                     bigquery.SchemaField("boolValue", "BOOL", mode="NULLABLE"),
                     bigquery.SchemaField("intValue", "STRING", mode="REPEATED"),
-                    bigquery.SchemaField("floatValue",
-                                         "NUMERIC",
-                                         mode="REPEATED"),
-                    bigquery.SchemaField("minValue", "NUMERIC",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("maxValue", "NUMERIC",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "floatValue", "NUMERIC", mode="REPEATED"
+                    ),
+                    bigquery.SchemaField(
+                        "minValue", "NUMERIC", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "maxValue", "NUMERIC", mode="NULLABLE"
+                    ),
                     bigquery.SchemaField("unitCode", "STRING", mode="NULLABLE"),
                 ],
             ),
@@ -476,12 +481,12 @@ def create_products_table(client, dataset, storage_bucket, table_name):
                     bigquery.SchemaField("country", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("region", "STRING", mode="NULLABLE"),
                     bigquery.SchemaField("taxShip", "BOOL", mode="NULLABLE"),
-                    bigquery.SchemaField("locationId",
-                                         "STRING",
-                                         mode="NULLABLE"),
-                    bigquery.SchemaField("postalCode",
-                                         "STRING",
-                                         mode="NULLABLE"),
+                    bigquery.SchemaField(
+                        "locationId", "STRING", mode="NULLABLE"
+                    ),
+                    bigquery.SchemaField(
+                        "postalCode", "STRING", mode="NULLABLE"
+                    ),
                 ],
             ),
         ],
@@ -506,45 +511,50 @@ def create_ads_table(client, dataset, storage_bucket, table_name):
     table = client.get_table(table_ref)
     print("table {} already exists.".format(table))
   except NotFound:
-    job_config = bigquery.LoadJobConfig(schema=[
-        bigquery.SchemaField("manager_id", "INTEGER"),
-        bigquery.SchemaField("customer_id", "INTEGER"),
-        bigquery.SchemaField("campaign_id", "INTEGER"),
-        bigquery.SchemaField("product_item_id", "STRING"),
-        bigquery.SchemaField("metrics_clicks", "INTEGER"),
-        bigquery.SchemaField("metrics_conversions", "FLOAT"),
-        bigquery.SchemaField("metrics_conversions_value", "FLOAT"),
-        bigquery.SchemaField("metrics_impressions", "INTEGER"),
-        bigquery.SchemaField("date", "DATE"),
-        bigquery.SchemaField("product_aggregator_id", "INTEGER"),
-        bigquery.SchemaField("product_bidding_category_level1", "STRING"),
-        bigquery.SchemaField("product_bidding_category_level2", "STRING"),
-        bigquery.SchemaField("product_bidding_category_level3", "STRING"),
-        bigquery.SchemaField("product_bidding_category_level4", "STRING"),
-        bigquery.SchemaField("product_bidding_category_level5", "STRING"),
-        bigquery.SchemaField("product_brand", "STRING"),
-        bigquery.SchemaField("product_country", "STRING"),
-        bigquery.SchemaField("product_custom_attribute_0", "STRING"),
-        bigquery.SchemaField("product_custom_attribute_1", "STRING"),
-        bigquery.SchemaField("product_custom_attribute_2", "STRING"),
-        bigquery.SchemaField("product_custom_attribute_3", "STRING"),
-        bigquery.SchemaField("product_custom_attribute_4", "STRING"),
-        bigquery.SchemaField("product_merchant_id", "INTEGER"),
-        bigquery.SchemaField("product_store_id", "STRING"),
-        bigquery.SchemaField("product_type_l1", "STRING"),
-        bigquery.SchemaField("product_type_l2", "STRING"),
-        bigquery.SchemaField("product_type_l3", "STRING"),
-        bigquery.SchemaField("product_type_l4", "STRING"),
-        bigquery.SchemaField("product_type_l5", "STRING"),
-        bigquery.SchemaField("campaign_name", "STRING"),
-        bigquery.SchemaField("campaign_advertising_channel_type", "INTEGER"),
-        bigquery.SchemaField("campaign_advertising_channel_sub_type",
-                             "INTEGER"),
-        bigquery.SchemaField("campaign_status", "INTEGER"),
-        bigquery.SchemaField("product_channel", "STRING"),
-        bigquery.SchemaField("country", "STRING"),
-        bigquery.SchemaField("product_language", "STRING"),
-    ])
+    job_config = bigquery.LoadJobConfig(
+        schema=[
+            bigquery.SchemaField("manager_id", "INTEGER"),
+            bigquery.SchemaField("customer_id", "INTEGER"),
+            bigquery.SchemaField("campaign_id", "INTEGER"),
+            bigquery.SchemaField("product_item_id", "STRING"),
+            bigquery.SchemaField("metrics_clicks", "INTEGER"),
+            bigquery.SchemaField("metrics_conversions", "FLOAT"),
+            bigquery.SchemaField("metrics_conversions_value", "FLOAT"),
+            bigquery.SchemaField("metrics_impressions", "INTEGER"),
+            bigquery.SchemaField("date", "DATE"),
+            bigquery.SchemaField("product_aggregator_id", "INTEGER"),
+            bigquery.SchemaField("product_bidding_category_level1", "STRING"),
+            bigquery.SchemaField("product_bidding_category_level2", "STRING"),
+            bigquery.SchemaField("product_bidding_category_level3", "STRING"),
+            bigquery.SchemaField("product_bidding_category_level4", "STRING"),
+            bigquery.SchemaField("product_bidding_category_level5", "STRING"),
+            bigquery.SchemaField("product_brand", "STRING"),
+            bigquery.SchemaField("product_country", "STRING"),
+            bigquery.SchemaField("product_custom_attribute_0", "STRING"),
+            bigquery.SchemaField("product_custom_attribute_1", "STRING"),
+            bigquery.SchemaField("product_custom_attribute_2", "STRING"),
+            bigquery.SchemaField("product_custom_attribute_3", "STRING"),
+            bigquery.SchemaField("product_custom_attribute_4", "STRING"),
+            bigquery.SchemaField("product_merchant_id", "INTEGER"),
+            bigquery.SchemaField("product_store_id", "STRING"),
+            bigquery.SchemaField("product_type_l1", "STRING"),
+            bigquery.SchemaField("product_type_l2", "STRING"),
+            bigquery.SchemaField("product_type_l3", "STRING"),
+            bigquery.SchemaField("product_type_l4", "STRING"),
+            bigquery.SchemaField("product_type_l5", "STRING"),
+            bigquery.SchemaField("campaign_name", "STRING"),
+            bigquery.SchemaField(
+                "campaign_advertising_channel_type", "INTEGER"
+            ),
+            bigquery.SchemaField(
+                "campaign_advertising_channel_sub_type", "INTEGER"
+            ),
+            bigquery.SchemaField("campaign_status", "INTEGER"),
+            bigquery.SchemaField("product_channel", "STRING"),
+            bigquery.SchemaField("country", "STRING"),
+            bigquery.SchemaField("product_language", "STRING"),
+        ]
+    )
 
     # NOTE: reference to file is gs://{bucket_name}/{file_name}
     uri = f"gs://{storage_bucket}/Ads_Storage_Data"
@@ -741,7 +751,9 @@ def create_products_final_table(client, project_name, dataset):
 
 def create_final_table(client, project_name, dataset):
   table_id = "{}.{}.ACIT_FINAL_TABLE".format(project_name, dataset)
-  job_config = bigquery.QueryJobConfig(destination=table_id,)
+  job_config = bigquery.QueryJobConfig(
+      destination=table_id,
+  )
   job_config.write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 
   sql = f"""
@@ -838,9 +850,11 @@ if __name__ == "__main__":
       constants.TABLE_NAME_ADS,
   )
 
-  create_ads_final_table(bigquery_client, constants.PROJECT_NAME,
-                         constants.DATASET)
-  create_products_final_table(bigquery_client, constants.PROJECT_NAME,
-                              constants.DATASET)
+  create_ads_final_table(
+      bigquery_client, constants.PROJECT_NAME, constants.DATASET
+  )
+  create_products_final_table(
+      bigquery_client, constants.PROJECT_NAME, constants.DATASET
+  )
 
   create_final_table(bigquery_client, constants.PROJECT_NAME, constants.DATASET)

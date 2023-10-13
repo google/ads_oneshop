@@ -6,8 +6,9 @@ import google.cloud.storage as storage
 import acit.config.constants as constants
 
 
-def bq_create_dataset(client: bigquery.Client, project_name: str,
-                      dataset_ref: str) -> None:
+def bq_create_dataset(
+    client: bigquery.Client, project_name: str, dataset_ref: str
+) -> None:
   dataset_id = f"{project_name}.{dataset_ref}"
   try:
     dataset = client.get_dataset(dataset_id)
@@ -33,8 +34,9 @@ def bq_create_storage_bucket(bucket_name: str) -> None:
     )
 
 
-def bq_upload_blob(bucket_name: str, source_file_name: str,
-                   destination_blob_name: str) -> None:
+def bq_upload_blob(
+    bucket_name: str, source_file_name: str, destination_blob_name: str
+) -> None:
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
   blob = bucket.blob(destination_blob_name)

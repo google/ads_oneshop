@@ -13,7 +13,7 @@
 # limitations under the License.
 """Gets all products on the specified account."""
 
-_PRODUCTS_FILE = "./acit/api_datasets/data/products_data/products.json"
+_PRODUCTS_FILE = './acit/api_datasets/data/products_data/products.json'
 
 import sys
 import json
@@ -29,8 +29,9 @@ def main(argv):
   merchant_id = config['merchantId']
   common.check_mca(config, True)
 
-  account_request = service.accounts().list(merchantId=merchant_id,
-                                            maxResults=MAX_PAGE_SIZE)
+  account_request = service.accounts().list(
+      merchantId=merchant_id, maxResults=MAX_PAGE_SIZE
+  )
 
   with open(_PRODUCTS_FILE, 'wt') as f:
     while account_request is not None:
@@ -55,7 +56,8 @@ def main(argv):
           json_object = json.dumps(products)
           f.write(json_object)
           product_request = service.products().list_next(
-              product_request, result2)
+              product_request, result2
+          )
       account_request = service.accounts().list_next(account_request, result)
 
 
