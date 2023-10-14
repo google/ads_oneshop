@@ -63,7 +63,7 @@ def JoinProductStatuses(
     # This should always be 1:1
     for t in itertools.product(v['products'], v['statuses']):
       yield {
-          'merchantId': merchant_id,
+          'accountId': merchant_id,
           'offerId': offer_id,
           'product': t[0],
           'status': t[1],
@@ -76,7 +76,7 @@ def JoinProductStatuses(
           >> beam.Map(
               lambda p: (
                   (
-                      p[resource_downloader.METADATA_KEY]['merchantId'],
+                      p[resource_downloader.METADATA_KEY]['accountId'],
                       p['id'],
                   ),
                   p,
@@ -87,7 +87,7 @@ def JoinProductStatuses(
           >> beam.Map(
               lambda s: (
                   (
-                      s[resource_downloader.METADATA_KEY]['merchantId'],
+                      s[resource_downloader.METADATA_KEY]['accountId'],
                       s['productId'],
                   ),
                   s,

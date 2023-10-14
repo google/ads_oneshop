@@ -23,6 +23,7 @@ from acit import resource_downloader
 from google.ads.googleads import client
 
 from googleapiclient import discovery
+from googleapiclient import http
 
 import google.auth
 
@@ -30,7 +31,15 @@ import os
 import datetime
 import json
 import pathlib
+
 import sys
+
+from typing import Set
+
+if sys.version_info < (3, 9, 0):
+  # Required for union operators
+  raise RuntimeError('Python 3.9 or greater required.')
+
 
 _CUSTOMER_IDS = flags.DEFINE_multi_string(
     'customer_id',
@@ -144,10 +153,22 @@ _ACIT_ADS_OUTPUT_DIR = 'ads'
 
 _ACIT_MC_OUTPUT_DIR = 'merchant_center'
 
+# Leaf-only resources
 _ACIT_MC_RESOURCES = [
-    # TODO: add MCA-specific resources
     'products',
     'productstatuses',
+]
+
+_ACIT_MC_ACCOUNT_RESOURCE = 'accounts'
+_ACIT_MC_SHIPPINGSETTINGS_RESOURCE = 'shippingsettings'
+
+# Rolled-down settings.
+# Each resultant file will have exactly one entry.
+# If that entry is from an MCA, it will have a 'children' key.
+_ACIT_ACCOUNT_RESOURCES = [
+    _ACIT_MC_ACCOUNT_RESOURCE,
+    'liasettings',
+    _ACIT_MC_SHIPPINGSETTINGS_RESOURCE,
 ]
 
 
@@ -182,35 +203,175 @@ def main(_):
       )
   logging.info('Done loading Ads data.')
 
+  # TODO: break out Merchant Center logic into its own file
   logging.info('Loading Merchant Center data...')
   # Technically, we already had creds from Ads. This is duplicative.
   #   In a perfect world, we use something like Secret Manager to retrieve
   #   OAuth client creds, Ads Dev tokens, and refresh tokens by account id.
   #   See https://developers.google.com/identity/protocols/oauth2/policies
   creds, _ = google.auth.default()
-  # TODO: handle MCAs
-  # TODO: break out Merchant Center logic into its own file
-  for merchant_id in _MERCHANT_CENTER_IDS.value:
-    logging.info('Processing Merchant Center ID %s...' % merchant_id)
-    merchant_api = discovery.build('content', 'v2.1', credentials=creds)
+
+  # Before we can do anything, we need to know what type of accounts we're
+  # dealing with.
+
+  input_ids = set(_MERCHANT_CENTER_IDS.value)
+  # Preload Merchant Center authinfo so we know which accounts (for this
+  # user) are top-level.
+  merchant_api = discovery.build('content', 'v2.1', credentials=creds)
+  # The sets of accessible aggregators and standlone accounts
+  aggregator_ids: Set[str] = set()
+  standalone_ids: Set[str] = set()
+  # All leaf accounts we will actually process
+  leaf_ids: Set[str] = set()
+
+  leaf_to_parent = {}
+
+  for result in resource_downloader.download_resources(
+      client=merchant_api,
+      resource_name='accounts',
+      params={},
+      parent_resource='',
+      parent_params={},
+      resource_method='authinfo',
+      result_path='',
+      metadata={},
+      is_scalar=True,
+  ):
+    for account_identifier in result.get('accountIdentifiers', []):
+      # Users may only be present in one account.
+      # Aggregator IDs are optional in leaves.
+      # We must check for merchantId first.
+      if 'merchantId' in account_identifier:
+        standalone_ids.add(account_identifier['merchantId'])
+      else:
+        aggregator_ids.add(account_identifier['aggregatorId'])
+
+  # Top-level settings must roll down  (if they exist) from MCAs.
+  # Top-level settings include image enhancement, LIA, Ads links, etc
+  # This significantly complicates the data model (especially for Ads links)
+  for aggregator_id in aggregator_ids.intersection(input_ids):
+    for name in _ACIT_ACCOUNT_RESOURCES:
+      if name == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE:
+        # This shippingsettings.list is failing. Use get below.
+        continue
+      logging.info('Fetching account-level resource %s...' % name)
+      for parent in resource_downloader.download_resources(
+          client=merchant_api,
+          resource_name=name,
+          # Required to duplicate here
+          params={'merchantId': aggregator_id, 'accountId': aggregator_id},
+          parent_resource='',
+          parent_params={},
+          resource_method='get',
+          result_path='',
+          metadata={},
+          is_scalar=True,
+      ):
+        children = []
+        # This key will only be set on MCA account-level metrics
+        parent['children'] = children
+
+        logging.info('Fetching subaccount resources %s...' % name)
+        for child in resource_downloader.download_resources(
+            client=merchant_api,
+            resource_name=name,
+            params={'merchantId': aggregator_id},
+            parent_resource='',
+            parent_params={},
+            resource_method='list',
+            result_path='resources',
+            metadata={},
+        ):
+          children.append(child)
+          if name == _ACIT_MC_ACCOUNT_RESOURCE:
+            leaf_to_parent[child['id']] = aggregator_id
+            leaf_ids.add(child['id'])
+
+        # Wait until the end so the parent has all children
+        output_file = os.path.join(
+            acit_mc_output_dir, aggregator_id, name, 'rows.jsonlines'
+        )
+        pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, 'wt') as f:
+          print(json.dumps(parent), file=f)
+
+  for account_id in leaf_ids | (standalone_ids & input_ids):
+    logging.info('Processing Merchant Center ID %s...' % account_id)
+    # We need account-level resources
+    for resource in _ACIT_ACCOUNT_RESOURCES:
+      # TODO: Remove after shippingsettings.list is fixed.
+      if (
+          account_id in standalone_ids
+          or resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
+      ):
+        logging.info(
+            '...pulling standalone account-level resource %s...' % resource
+        )
+        output_file = os.path.join(
+            acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
+        )
+        pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, 'wt') as f:
+          try:
+            for result in resource_downloader.download_resources(
+                client=merchant_api,
+                resource_name=resource,
+                params={
+                    'merchantId': leaf_to_parent.get(account_id, account_id),
+                    'accountId': account_id,
+                },
+                parent_resource='',
+                parent_params={},
+                resource_method='get',
+                result_path='',
+                metadata={'accountId': account_id},
+                is_scalar=True,
+            ):
+              print(json.dumps(result), file=f)
+          except http.HttpError as e:
+            if (
+                str(e.status_code) == '404'
+                and resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
+            ):
+              logging.warning(
+                  (
+                      'Unable to find shipping settings for account %s. '
+                      "It's possible no such setting exists."
+                  )
+                  % account_id
+              )
+            else:
+              raise e
+
     for resource in _ACIT_MC_RESOURCES:
       logging.info('...pulling resource %s...' % resource)
       output_file = os.path.join(
-          acit_mc_output_dir, merchant_id, resource, 'rows.jsonlines'
+          acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
       )
       pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
       with open(output_file, 'wt') as f:
         for result in resource_downloader.download_resources(
             client=merchant_api,
             resource_name=resource,
-            params={'merchantId': merchant_id},
+            # Yes, this is inconsistent with the rest of the API.
+            params={'merchantId': account_id},
             parent_resource='',
             parent_params={},
             resource_method='list',
             result_path='resources',
-            metadata={'merchantId': merchant_id},
+            metadata={'accountId': account_id},
         ):
           print(json.dumps(result), file=f)
+
+  unprocessed = input_ids - (leaf_ids | standalone_ids | aggregator_ids)
+  if unprocessed:
+    logging.warn(
+        (
+            'This credential does not have access to the following '
+            'input account(s): %s. Some data may be missing.'
+        )
+        % ' ,'.join(unprocessed)
+    )
   logging.info('Done loading Merchant Center data.')
 
 

@@ -19,7 +19,7 @@ from absl import app
 from absl import flags
 from absl import logging
 
-from typing import cast, Dict, Any, Iterable
+from typing import cast, Dict, Any, Iterable, Callable
 
 import json
 import sys
@@ -96,13 +96,18 @@ def _substitute(params: Dict[str, Any], substitutions: Dict[str, Any]):
 
 
 def get_results(
-    collection: str,
+    collection: Callable,
     params: Dict[str, Any],
     resource_method: str,
     result_path: str,
     metadata: Dict[str, Any],
+    is_scalar: bool = False,
 ):
   request = getattr(collection(), resource_method)(**params)
+  if is_scalar:
+    yield request.execute()
+    return
+
   while request:
     response = request.execute()
     for result in response.get(result_path, []):
@@ -128,9 +133,10 @@ def download_resources(
     params: Dict[str, Any],
     parent_resource: str,
     parent_params: Dict[str, Any],
-    resource_method: list,
+    resource_method: str,
     result_path: str,
     metadata: Dict[str, Any],
+    is_scalar: bool = False,
 ) -> Iterable[Any]:
   collection = getattr(client, resource_name)
   if parent_resource:
@@ -147,10 +153,11 @@ def download_resources(
           resource_method,
           result_path,
           substituted_metadata,
+          is_scalar,
       )
   else:
     yield from get_results(
-        collection, params, resource_method, result_path, metadata
+        collection, params, resource_method, result_path, metadata, is_scalar
     )
 
 
