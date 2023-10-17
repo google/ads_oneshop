@@ -13,7 +13,7 @@
 # limitations under the License.
 from absl import app
 
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 import itertools
 import json
@@ -99,50 +99,26 @@ def JoinProductStatuses(
   )
 
 
-# TODO: Remove
-def listing_group_trees(filters):
-  """
-  cross-join all products against all leaf filters
-    groupby product id, campaign id, asset group id: [modded leaf filters]
-    map: filter applicable rules; retain max length paths; prefer valued
-      return single unit include/exclude type and criteria ID
-    group by product id: [each campaign's asset group's filter group full path]
-    # skip group by campaign since campaign:asset_group is often 1:1
-    map: whether any rule exists,
-         across all campaigns,
-         where product is included and not top-level everything
-  """
-  pass
-
-
-@beam.ptransform_fn
-def AnnotateListingGroupFilters(filters):
-  """
-  Group by Asset Group. For each asset group, take all leaf filters,
-  get the length of all matching leaf filters, and whether they're
-  'everything else'
-  """
-  filters | 'Filter Length' >> beam.Map(
-      lambda f: len(f['assetGroupListingGroupFilter']['path']['dimensions'])
-  )
-  raise NotImplementedError
-
-
-@beam.ptransform_fn
-def MatchFilters(products, filters):
-  """For each product, find matching listing group filters per asset group."""
-  raise NotImplementedError
-
-
 def dimension_is_wildcard(d):
   if 'productBiddingCategory' in d:
     return 'id' not in d['productBiddingCategory']
+  if 'productBrand' in d:
+    return 'value' not in d['productBrand']
+  if 'productChannel' in d:
+    return 'channel' not in d['productChannel']
+  if 'productCondition' in d:
+    return 'condition' not in d['productCondition']
+  if 'productCustomAttribute' in d:
+    return 'value' not in d['productCustomAttribute']
   if 'productItemId' in d:
     return 'value' not in d['productItemId']
-  # TODO: Implement other dimensions
+  if 'productType' in d:
+    return 'value' not in d['productType']
+  return False
 
 
-_PRODUCT_CATEGORY_LEVELS = [
+# 1-indexed dimension levels
+_PRODUCT_DIMENSION_LEVELS = [
     'LEVEL1',
     'LEVEL2',
     'LEVEL3',
@@ -150,37 +126,97 @@ _PRODUCT_CATEGORY_LEVELS = [
     'LEVEL5',
 ]
 
+# 0-indexed dimension indices
+_PRODUCT_DIMENSION_INDICES = [
+    'INDEX0',
+    'INDEX1',
+    'INDEX2',
+    'INDEX3',
+    'INDEX4',
+]
 
-def dimension_matches_product(p, d):
-  # TODO: Implement other dimensions
-  if 'productBiddingCategory' in d:
-    info = d['productBiddingCategory']
-    # Wildcard
-    if 'id' not in info or 'level' not in info:
-      return True
-    level = _PRODUCT_CATEGORY_LEVELS.index(info['level'])
-    google_product_category: str = p.get('googleProductCategory', '')
-    tokens = google_product_category.split(' > ')
-    if level >= len(tokens):
+
+def taxonomy_matches_dimension(
+    product_taxonomy,
+    dimension,
+    dimension_key,
+    depth_key,
+    depth_names,
+    test: Callable[[Any, str], bool],
+) -> bool:
+  if dimension_key in dimension:
+    info = dimension[dimension_key]
+    depth = depth_names.index(info[depth_key])
+    taxonomy_tokens = product_taxonomy.split(' > ')
+    if depth >= len(taxonomy_tokens):
       # Ad criteria is too granular
       return False
-    google_product_category = ' > '.join(tokens[: level + 1])
-    # If there is no ID (wildcard), return True
-    return int(info['id']) == product_category.id_by_path(
-        google_product_category
+    # We only want to match up to the depth specified in the dimension
+    product_taxonomy = ' > '.join(taxonomy_tokens[: depth + 1])
+    return test(info, product_taxonomy)
+  return False
+
+
+def dimension_matches_product(p, d):
+  if dimension_is_wildcard(d):
+    return True
+
+  if 'productBiddingCategory' in d:
+    return taxonomy_matches_dimension(
+        p.get('googleProductCategory', ''),
+        d,
+        'productBiddingCategory',
+        'level',
+        _PRODUCT_DIMENSION_LEVELS,
+        lambda dimension, taxonomy: int(dimension['id'])
+        == product_category.id_by_path(taxonomy),
     )
+
+  # All string comparisons should be case-insensitive
+  # Ads and MC have inconsistent case processing.
+
+  if 'productBrand' in d:
+    return d['productBrand']['value'].lower() == p['brand'].lower()
+  if 'productChannel' in d:
+    return d['productChannel']['channel'].lower() == p['channel'].lower()
+  if 'productCondition' in d:
+    return d['productCondition']['condition'].lower() == p['condition'].lower()
+  if 'productCustomAttribute' in d:
+    info = d['productCustomAttribute']
+    depth = _PRODUCT_DIMENSION_INDICES.index(info['index'])
+    product_label = p.get(f'customLabel{depth}', '')
+    return info['value'].lower() == product_label.lower()
   if 'productItemId' in d:
-    # Handle wildcards
-    match = p['offerId']
-    return d.get('value', match) == d['productItemId']
+    return d['productItemId']['value'].lower() == p['offerId'].lower()
+  # TODO: Fix. Product Type is a freetext field within MC.
+  #       There's an edge case where data is bad, and ">" does not
+  #       adequately delimit. So "A > B > > > C" is [A, B, >, C].
+  if 'productType' in d:
+    return taxonomy_matches_dimension(
+        # Always get the first one
+        (p.get('productTypes', []) or [''])[0],
+        d,
+        'productType',
+        'level',
+        _PRODUCT_DIMENSION_LEVELS,
+        lambda dimension, taxonomy: dimension['value'].lower()
+        == taxonomy.split(' > ')[-1].lower()
+        if taxonomy
+        else False,
+    )
+
   return False
 
 
 def product_targeted_by_tree(p, t: Dict[str, Any]):
+  if t is None:
+    raise ValueError('Listing Group Tree must be valued')
+
   if 'isTargeted' in t:
     return t['isTargeted']
+  assert 'children' in t
   real_match = None
-  catch_all = None
+  catch_all = t['children'][0]
   for c in t['children']:
     # There can only be 2 possibilities
     if dimension_is_wildcard(c['node']):
@@ -192,20 +228,30 @@ def product_targeted_by_tree(p, t: Dict[str, Any]):
 
 def annotate_pmax_filter(product_with_filters):
   p = product_with_filters['product']
-  tree = product_with_filters['pmaxFilters']
-  product_with_filters['isPMaxTargeted'] = product_targeted_by_tree(p, tree)
+  # May be empty if no filters match
+  tree = product_with_filters.get('pmaxFilters')
+  if tree:
+    product_with_filters['isPMaxTargeted'] = product_targeted_by_tree(p, tree)
   return product_with_filters
 
 
 def join_filters_to_products(kv):
   # TODO: K should shard by customer ID, Date
   k, v = kv
-  products = v['products']
-  for tree in v['pmax_filters']:
-    # TODO: Figure out how to "trace back" a given campaign, asset group, and
-    #       filter to the serving of a given product.
-    asset_group_id, filters = tree
-    for p in products:
+  # TODO: this should be a left join on products to filters. Is it?
+  # If it is a left join, how should we deal with non-filtered products? (i.e., no PMax campaigns)
+  for p in v['products']:
+    trees = v['pmax_filters']
+    if not trees:
+      yield p
+      continue
+    for tree in v['pmax_filters']:
+      ids, filters = tree
+      customer_id, campaign_id, asset_group_id = ids
+      # Use this for deduplicating later
+      p['customerId'] = customer_id
+      p['campaignId'] = campaign_id
+      p['assetGroupId'] = asset_group_id
       p['pmaxFilters'] = filters
       yield p
 
@@ -261,6 +307,39 @@ def build_listing_group_tree(asset_group_id, filters):
   return (asset_group_id, t)
 
 
+def deduplicate_customer_targeting(ids, duplicated_products):
+  """Mark a product as targeted if there exists at least one matching PMax tree.
+
+  For each unique customer_id, merchant account_id, offer_id tuple, retain only
+  those trees which result in targeting.
+  """
+  product = duplicated_products[0]
+  targeted_pmax_filters = []
+  product['targetingPMaxFilters'] = targeted_pmax_filters
+  for p in duplicated_products:
+    # May not be set if this object hasn't been matched to a PMax campaign
+    if p.get('isPMaxTargeted'):
+      pmax_filter = p['pmaxFilters']
+      pmax_filter['campaignId'] = p['campaignId']
+      pmax_filter['assetGroupId'] = p['assetGroupId']
+
+      del p['campaignId']
+      del p['assetGroupId']
+      del p['pmaxFilters']
+      targeted_pmax_filters.append(pmax_filter)
+  return product
+
+
+@beam.ptransform_fn
+def DeduplicatePMaxTargeting(duplicated):
+  # Since all filters are applied to all products, we need to dedupe.
+  return (
+      duplicated
+      | beam.GroupBy(lambda p: (p['customerId'], p['accountId'], p['offerId']))
+      | beam.MapTuple(deduplicate_customer_targeting)
+  )
+
+
 @beam.ptransform_fn
 def PMaxTargeting(products, filters):
   """Determines whether a product is targeted by a PMax campaign.
@@ -273,7 +352,13 @@ def PMaxTargeting(products, filters):
   all_asset_group_filters = (
       filters
       | 'Group filters by asset group'
-      >> beam.GroupBy(lambda f: f['assetGroup']['id'])
+      >> beam.GroupBy(
+          lambda f: (
+              f['customer']['id'],
+              f['campaign']['id'],
+              f['assetGroup']['id'],
+          )
+      )
       | beam.MapTuple(build_listing_group_tree)
       # Force all asset groups to a single value.
       # There can be 10,000 campaigns per CID, 100 asset groups campaign, and
@@ -299,10 +384,6 @@ def PMaxTargeting(products, filters):
   )
 
   return targeted_products
-
-  return (
-      products | MatchFilters(all_asset_group_filters) | annotate_pmax_filter()
-  )
 
 
 # Flags after `--` can get passed directly
@@ -351,6 +432,7 @@ def main(argv):
         | AnnotateProducts()
         | 'Calculate PMax Targeting'
         >> PMaxTargeting(asset_group_listing_filters)
+        | DeduplicatePMaxTargeting()
     )
 
     # TODO: Is this true?

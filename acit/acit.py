@@ -190,6 +190,7 @@ def main(_):
   for customer_id in _CUSTOMER_IDS.value:
     logging.info('Processing Customer ID %s' % customer_id)
     ads_client = client.GoogleAdsClient.load_from_storage()
+    ads_client.login_customer_id = customer_id
     for resource, query in _ALL_GAQL.items():
       logging.info('...pulling resource %s...' % resource)
       output_dir = os.path.join(acit_ads_output_dir, customer_id, resource)

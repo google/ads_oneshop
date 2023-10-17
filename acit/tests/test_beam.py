@@ -15,6 +15,10 @@ from absl.testing import parameterized
 
 from acit import create_base_tables
 
+import apache_beam as beam
+from apache_beam.testing import test_pipeline
+from apache_beam.testing import util
+
 
 class BeamTest(parameterized.TestCase):
 
@@ -204,6 +208,86 @@ class BeamTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       {
+          'testcase_name': 'product_bidding_category_specific',
+          'dimension': {
+              'productBiddingCategory': {'id': '1', 'level': 'LEVEL1'}
+          },
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_bidding_category_wildcard',
+          'dimension': {'productBiddingCategory': {'level': 'LEVEL1'}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_brand_specific',
+          'dimension': {'productBrand': {'value': 'Some Brand'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_brand_wildcard',
+          'dimension': {'productBrand': {}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_channel_specific',
+          'dimension': {'productChannel': {'channel': 'Some Channel'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_channel_wildcard',
+          'dimension': {'productChannel': {}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_condition_specific',
+          'dimension': {'productCondition': {'condition': 'new'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_condition_wildcard',
+          'dimension': {'productCondition': {}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_custom_attribute_specific',
+          'dimension': {'productCustomAttribute': {'value': 'some attribute'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_custom_attribute_wildcard',
+          'dimension': {'productCustomAttribute': {}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_item_specific',
+          'dimension': {'productItemId': {'value': 'asdf'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_item_wildcard',
+          'dimension': {'productItemId': {}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_type_specific',
+          'dimension': {'productType': {'value': 'some type'}},
+          'expected': False,
+      },
+      {
+          'testcase_name': 'product_type_wildcard',
+          'dimension': {'productType': {}},
+          'expected': True,
+      },
+  )
+  def test_dimension_is_wildcard(self, dimension, expected):
+    self.assertEqual(
+        create_base_tables.dimension_is_wildcard(dimension),
+        expected,
+    )
+
+  @parameterized.named_parameters(
+      {
           'testcase_name': 'product_category_top_level_match',
           'product': {'googleProductCategory': 'Animals & Pet Supplies'},
           'dimension': {
@@ -225,8 +309,69 @@ class BeamTest(parameterized.TestCase):
           'dimension': {'productBiddingCategory': {}},
           'expected': True,
       },
+      {
+          'testcase_name': 'product_brand_match',
+          'product': {'brand': 'Some Brand'},
+          'dimension': {'productBrand': {'value': 'Some Brand'}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_channel_match',
+          'product': {'channel': 'online'},
+          'dimension': {'productChannel': {'channel': 'online'}},
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_condition_match',
+          'product': {'condition': 'new'},
+          'dimension': {'productCondition': {'condition': 'new'}},
+          'expected': True,
+      },
+      # TODO: custom attribute out of index
+      {
+          'testcase_name': 'product_custom_attribute_match',
+          'product': {
+              'customLabel0': 'first attribute',
+              'customLabel1': 'some attribute',
+              'customLabel4': 'ignored',
+          },
+          'dimension': {
+              # 0-indexed
+              # Confusingly this refers to product labels, not attributes
+              'productCustomAttribute': {
+                  'value': 'some attribute',
+                  'index': 'INDEX1',
+              }
+          },
+          'expected': True,
+      },
+      {
+          'testcase_name': 'product_item_match',
+          'product': {'offerId': 'asdf'},
+          'dimension': {'productItemId': {'value': 'asdf'}},
+          'expected': True,
+      },
+      # TODO: Same test cases as above
+      {
+          'testcase_name': 'product_type_match',
+          # Ads only uses the first product type, no matter what
+          'product': {
+              'productTypes': [
+                  'First type > some type > Other type',
+                  'ignored taxonomy',
+                  'some bad > > > data',
+              ]
+          },
+          'dimension': {
+              # 1-indexed
+              'productType': {'value': 'some type', 'level': 'LEVEL2'}
+          },
+          'expected': True,
+      },
   )
-  def test_dimension_matches_product(self, product, dimension, expected):
+  def test_specific_dimension_matches_product(
+      self, product, dimension, expected
+  ):
     self.assertEqual(
         create_base_tables.dimension_matches_product(product, dimension),
         expected,
@@ -288,3 +433,138 @@ class BeamTest(parameterized.TestCase):
     self.assertEqual(
         create_base_tables.product_targeted_by_tree(product, tree), expected
     )
+
+  def test_cross_join_of_products_and_pmax(self):
+    expected = [
+        {
+            'accountId': '098',
+            'assetGroupId': 1000,
+            'campaignId': 456,
+            'customerId': 123,
+            'isPMaxTargeted': True,
+            'offerId': 'abc',
+            'pmaxFilters': {
+                'children': [{
+                    'isTargeted': True,
+                    'node': {'productItemId': 'abc'},
+                }]
+            },
+            'product': {'offerId': 'abc'},
+        },
+        {
+            'accountId': '098',
+            'assetGroupId': 2000,
+            'campaignId': 456,
+            'customerId': 123,
+            'isPMaxTargeted': False,
+            'offerId': 'abc',
+            'pmaxFilters': {
+                'children': [{
+                    'isTargeted': False,
+                    'node': {'productItemId': 'xyz'},
+                }]
+            },
+            'product': {'offerId': 'abc'},
+        },
+    ]
+
+    product_statuses = [{
+        'accountId': '098',
+        'offerId': 'abc',
+        'product': {'offerId': 'abc'},
+    }]
+
+    asset_group_filters = [
+        {
+            'customer': {'id': 123},
+            'campaign': {'id': 456},
+            'assetGroup': {'id': 1000},
+            'assetGroupListingGroupFilter': {
+                'type': 'UNIT_INCLUDED',
+                'path': {'dimensions': [{'productItemId': 'abc'}]},
+            },
+        },
+        {
+            'customer': {'id': 123},
+            'campaign': {'id': 456},
+            'assetGroup': {'id': 2000},
+            'assetGroupListingGroupFilter': {
+                'type': 'UNIT_EXCLUDED',
+                'path': {'dimensions': [{'productItemId': 'xyz'}]},
+            },
+        },
+    ]
+
+    with test_pipeline.Pipeline() as p:
+      products = p | 'Create products' >> beam.Create(product_statuses)
+      filters = p | 'Create filters' >> beam.Create(asset_group_filters)
+      out = products | create_base_tables.PMaxTargeting(filters)
+
+      util.assert_that(out, util.equal_to(expected))
+
+  def test_deduplicate_pmax_asset_group_filter(self):
+    expected = [
+        {
+            'customerId': 123,
+            'accountId': '098',
+            'offerId': 'abc',
+            'isPMaxTargeted': True,
+            # Provides traceability
+            'targetingPMaxFilters': [{
+                'campaignId': 456,
+                'assetGroupId': 1000,
+                'children': [{
+                    'isTargeted': True,
+                    'node': {'productItemId': 'abc'},
+                }],
+            }],
+        },
+    ]
+
+    joined_pmax_filters = [
+        {
+            'accountId': '098',
+            'assetGroupId': 1000,
+            'campaignId': 456,
+            'customerId': 123,
+            'isPMaxTargeted': True,
+            'offerId': 'abc',
+            'pmaxFilters': {
+                'children': [{
+                    'isTargeted': True,
+                    'node': {'productItemId': 'abc'},
+                }]
+            },
+        },
+        {
+            'accountId': '098',
+            'assetGroupId': 2000,
+            'campaignId': 456,
+            'customerId': 123,
+            'isPMaxTargeted': False,
+            'offerId': 'abc',
+            'pmaxFilters': {
+                'children': [{
+                    'isTargeted': False,
+                    'node': {'productItemId': 'xyz'},
+                }]
+            },
+        },
+    ]
+
+    with test_pipeline.Pipeline() as p:
+      out = (
+          p
+          | 'Create filters' >> beam.Create(joined_pmax_filters)
+          | create_base_tables.DeduplicatePMaxTargeting()
+      )
+
+      util.assert_that(out, util.equal_to(expected))
+
+  def test_pipeline_reports_products_without_pmax_campaigns(self):
+    expected = [{'product': {'offerId': 'abc'}}]
+    with test_pipeline.Pipeline() as p:
+      products = p | 'Products' >> beam.Create(expected)
+      filters = p | 'Empty filters' >> beam.Create([])
+      out = products | create_base_tables.PMaxTargeting(filters)
+      util.assert_that(out, util.equal_to(expected))

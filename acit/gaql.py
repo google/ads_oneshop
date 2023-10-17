@@ -40,7 +40,6 @@ _LOGIN_CUSTOMER_ID = flags.DEFINE_string(
     'login_customer_id',
     None,
     'The login customer ID to authenticate against',
-    required=True,
 )
 
 _ROOT_CUSTOMER_ID = flags.DEFINE_string(
