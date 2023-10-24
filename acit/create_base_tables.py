@@ -31,8 +31,8 @@ from absl import flags
 
 import json
 
-from acit import merchant_account
 from acit import performance_max
+from acit import shopping
 from acit import product
 from acit import resource_downloader
 
@@ -57,10 +57,6 @@ def main(argv):
   opts = pipeline_options.PipelineOptions(argv[1:])
   opts.view_as(pipeline_options.SetupOptions).save_main_session = True
 
-  # Pre-load objects in main before pipeline creation
-  category_cache = product.ProductCategoryCache()
-  pmax_matcher = performance_max.TargetingMatcher(category_cache=category_cache)
-
   with beam.Pipeline(options=opts) as p:
     # Ads Data
     asset_group_listing_filters = (
@@ -71,6 +67,22 @@ def main(argv):
             '/tmp/acit/*/ads/*/asset_group_listing_filter/*.jsonlines',
         )
     )
+
+    campaign_settings = p | 'Read Campaign Settings' >> _ReadGoogleAdsRows(
+        'Campaign Settings',
+        '/tmp/acit/*/ads/*/campaign/*.jsonlines',
+    )
+
+    campaign_criteria = p | 'Read Campaign Criteria' >> _ReadGoogleAdsRows(
+        'Campaign Criteria',
+        '/tmp/acit/*/ads/*/campaign_criterion/*.jsonlines',
+    )
+
+    ad_group_criteria = p | 'Read Ad Group Criteria' >> _ReadGoogleAdsRows(
+        'Ad Group Criteria',
+        '/tmp/acit/*/ads/*/ad_group_criterion/*.jsonlines',
+    )
+
     shopping_performance_views = (
         p
         | 'Read Shopping Performance Views'
@@ -107,39 +119,98 @@ def main(argv):
         | 'Product Statuses to JSON' >> beam.Map(json.loads)
     )
 
+    languages_by_campaign_id = (
+        campaign_criteria
+        | beam.Filter(lambda c: c['campaignCriterion']['type'] == 'LANGUAGE')
+        | beam.Map(
+            lambda c: (
+                c['campaign']['id'],
+                {
+                    'language': c['campaignCriterion']['language'][
+                        'languageConstant'
+                    ].lower(),
+                    'is_targeted': not c['campaignCriterion']['negative'],
+                },
+            )
+        )
+    )
+
+    listing_scopes_by_campaign_id = (
+        campaign_criteria
+        | beam.Filter(
+            lambda c: c['campaignCriterion']['type'] == 'LISTING_SCOPE'
+        )
+        | beam.Map(
+            lambda c: (
+                c['campaign']['id'],
+                c['campaignCriterion']['listingScope']['dimensions'],
+            )
+        )
+    )
+
+    campaigns = (
+        {
+            'campaigns': campaign_settings
+            | beam.Map(lambda c: (c['campaign']['id'], c)),
+            'languages': languages_by_campaign_id,
+            'inventory_filter_dimensions': listing_scopes_by_campaign_id,
+        }
+        | beam.CoGroupByKey()
+        | beam.FlatMapTuple(
+            lambda _, v: product.build_campaign(
+                # Must only be one
+                v['campaigns'][0],
+                # Array
+                v['languages'],
+                # At-most one
+                next(iter(v['inventory_filter_dimensions']), []),
+            )
+        )
+    )
+
+    shopping_campaigns_by_merchant_id = (
+        campaigns
+        | beam.Filter(lambda c: c['campaign_type'] == 'SHOPPING')
+        | 'Group Shopping campaigns by Merchant ID'
+        >> beam.GroupBy(lambda c: c['merchant_id'])
+    )
+
+    # Precompute shopping targeting sideinput
+    shopping_trees_by_campaign_id = (
+        ad_group_criteria
+        | 'Group filters by ad group'
+        >> beam.GroupBy(
+            lambda f: (
+                f['campaign']['id'],
+                f['adGroup']['id'],
+            )
+        )
+        | beam.MapTuple(shopping.build_product_group_tree)
+        | beam.MapTuple(lambda ids, tree: (ids[0], tree))
+        | 'Group Shopping Listing Group Trees by Campaign ID'
+        >> beam.GroupByKey()
+    )
+
+    pmax_campaigns_by_merchant_id = (
+        campaigns
+        | beam.Filter(lambda c: c['campaign_type'] == 'PERFORMANCE_MAX')
+        | 'Group PMax campaigns by Merchant ID'
+        >> beam.GroupBy(lambda c: c['merchant_id'])
+    )
+
     # Precompute PMax targeting sideinput
-    pmax_trees_by_cid = (
+    pmax_trees_by_campaign_id = (
         asset_group_listing_filters
         | 'Group filters by asset group'
         >> beam.GroupBy(
             lambda f: (
-                f['customer']['id'],
                 f['campaign']['id'],
                 f['assetGroup']['id'],
             )
         )
-        # TODO: evaluate memory bloat by passing a fully-constructed object here.
-        | beam.MapTuple(
-            lambda ids, filters: (
-                ids[0],
-                pmax_matcher.build_listing_group_tree(filters),
-            )
-        )
-        # Force all asset groups to a single CID.
-        # There can be 10,000 campaigns per CID, 100 asset groups campaign, and
-        # 1,000 listing group filters per asset group: 1 Billion filters per CID.
-        # Assume ~300 bytes per filter JSON object.
-        # Implies 300 GB max memory per CID. In practice, this is much lower.
-        # Well-below GCE M2-tier limits.
-        | 'Group by Customer ID' >> beam.GroupByKey()
-    )
-
-    # Precompute effective Merchant Center to Google Ads leaf links
-    cids_by_merchant_id = (
-        accounts
-        | 'Get linked ads accounts'
-        >> beam.FlatMap(merchant_account.extract_ads_ids_by_merchant)
-        | 'Group by leaf Merchant ID' >> beam.GroupByKey()
+        | beam.MapTuple(performance_max.build_product_targeting_tree)
+        | beam.MapTuple(lambda ids, tree: (ids[0], tree))
+        | 'Group PMax Listing Group Trees by Campaign ID' >> beam.GroupByKey()
     )
 
     # First, join all products and their 1:1 statuses
@@ -181,22 +252,43 @@ def main(argv):
         # Add PMax targeting. Side-input views provide in-memory lookups.
         | 'Get PMax targeting'
         >> beam.FlatMap(
-            pmax_matcher.get_pmax_targeting,
-            pvalue.AsDict(cids_by_merchant_id),
-            pvalue.AsDict(pmax_trees_by_cid),
+            product.get_campaign_targeting,
+            pvalue.AsDict(pmax_trees_by_campaign_id),
+            pvalue.AsDict(pmax_campaigns_by_merchant_id),
         )
         | 'Combine PMax targeting'
         >> beam.MapTuple(
             lambda product, trees: {
-                'productStatus': product,
+                **product,
                 'hasPMaxTargeting': True if trees else False,
                 'pMaxFilters': trees,
             }
         )
+        # Add Shopping targeting. Side-input views provide in-memory lookups.
+        | 'Get Shopping targeting'
+        >> beam.FlatMap(
+            product.get_campaign_targeting,
+            pvalue.AsDict(shopping_trees_by_campaign_id),
+            pvalue.AsDict(shopping_campaigns_by_merchant_id),
+        )
+        | 'Combine Shopping targeting'
+        >> beam.MapTuple(
+            lambda product, trees: {
+                **product,
+                'hasShoppingTargeting': True if trees else False,
+                'shoppingFilters': trees,
+            }
+        )
     )
+
+    def products_table_row(row):
+      # TODO: use this for the final products table schema
+      return row
 
     _ = (
         all_products
+        | 'Convert to final products table output'
+        >> beam.Map(products_table_row)
         | 'JSON' >> beam.Map(json.dumps)
         | textio.WriteToText(flags.FLAGS.output)
     )

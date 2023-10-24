@@ -40,6 +40,8 @@ if sys.version_info < (3, 9, 0):
   # Required for union operators
   raise RuntimeError('Python 3.9 or greater required.')
 
+ADS_API_VERSION = 'v14'
+
 
 _CUSTOMER_IDS = flags.DEFINE_multi_string(
     'customer_id',
@@ -79,8 +81,48 @@ WHERE
   segments.date DURING LAST_7_DAYS
 """
 
+# WIP: need to query for each campaign type
+# If neither feed label nor sales country are set, then
+#   shopping campaigns target all feeds from an account.
+# TODO: Check local result for PMax (default enabled)
+_GAQL_CAMPAIGN_SETTINGS = """
+SELECT
+  customer.id,
+  campaign.id,
+  campaign.status,
+  campaign.shopping_setting.campaign_priority,
+  campaign.shopping_setting.enable_local,
+  campaign.shopping_setting.feed_label,
+  campaign.shopping_setting.merchant_id,
+  campaign.shopping_setting.sales_country,
+  campaign.status,
+  campaign.advertising_channel_type,
+  campaign.advertising_channel_sub_type
+FROM campaign
+WHERE
+  campaign.status = 'ENABLED'
+"""
+
 # Non-PMax
-# TODO: Evaluate SHOPPING_COMPARISON_LISTING_ADS
+
+# "Inventory Filters"
+_GAQL_CAMPAIGN_CRITERIA = """
+SELECT
+  customer.id,
+  campaign.id,
+  campaign.status,
+  campaign_criterion.status,
+  campaign_criterion.type,
+  campaign_criterion.listing_scope.dimensions,
+  campaign_criterion.language.language_constant,
+  campaign_criterion.negative
+FROM campaign_criterion
+WHERE
+  campaign_criterion.status = 'ENABLED'
+  AND campaign.status = 'ENABLED'
+  AND campaign_criterion.type IN ('LISTING_SCOPE', 'LANGUAGE')
+"""
+
 _GAQL_AD_GROUP_CRITERIA = """
 SELECT
   customer.id,
@@ -90,14 +132,17 @@ SELECT
   ad_group_criterion.negative,
   ad_group_criterion.status,
   ad_group_criterion.display_name,
-  ad_group_criterion.type
+  ad_group_criterion.type,
+  ad_group_criterion.listing_group.path,
+  ad_group_criterion.listing_group.type
 FROM ad_group_criterion
 WHERE
   ad_group_criterion.status = 'ENABLED'
   AND ad_group_criterion.negative = FALSE
   AND campaign.status = 'ENABLED'
   AND ad_group.status = 'ENABLED'
-  AND ad_group.type IN ('SHOPPING_PRODUCT_ADS', 'SHOPPING_SMART_ADS')
+  AND ad_group_criterion.type IN ('LISTING_GROUP')
+  AND ad_group_criterion.listing_group.type = 'UNIT'
 """
 
 # Asset group - PMax only
@@ -122,16 +167,6 @@ SELECT
   asset_group_listing_group_filter.id,
   asset_group_listing_group_filter.parent_listing_group_filter,
   asset_group_listing_group_filter.type,
-  asset_group_listing_group_filter.case_value.product_brand.value,
-  asset_group_listing_group_filter.case_value.product_item_id.value,
-  asset_group_listing_group_filter.case_value.product_condition.condition,
-  asset_group_listing_group_filter.case_value.product_channel.channel,
-  asset_group_listing_group_filter.case_value.product_custom_attribute.index,
-  asset_group_listing_group_filter.case_value.product_custom_attribute.value,
-  asset_group_listing_group_filter.case_value.product_type.level,
-  asset_group_listing_group_filter.case_value.product_type.value,
-  asset_group_listing_group_filter.case_value.product_bidding_category.level,
-  asset_group_listing_group_filter.case_value.product_bidding_category.id,
   asset_group_listing_group_filter.path
 FROM asset_group_listing_group_filter
 WHERE
@@ -141,6 +176,8 @@ WHERE
 """
 
 _ALL_GAQL = {
+    'campaign': _GAQL_CAMPAIGN_SETTINGS,
+    'campaign_criterion': _GAQL_CAMPAIGN_CRITERIA,
     'ad_group_criterion': _GAQL_AD_GROUP_CRITERIA,
     'asset_group_listing_filter': _GAQL_ASSET_GROUP_LISTING_FILTER,
     'shopping_performance_view': _GAQL_SHOPPING_PERFORMANCE_VIEW,
@@ -189,7 +226,9 @@ def main(_):
   logging.info('Loading Ads data...')
   for customer_id in _CUSTOMER_IDS.value:
     logging.info('Processing Customer ID %s' % customer_id)
-    ads_client = client.GoogleAdsClient.load_from_storage()
+    ads_client = client.GoogleAdsClient.load_from_storage(
+        version=ADS_API_VERSION
+    )
     ads_client.login_customer_id = customer_id
     for resource, query in _ALL_GAQL.items():
       logging.info('...pulling resource %s...' % resource)
@@ -300,7 +339,7 @@ def main(_):
     logging.info('Processing Merchant Center ID %s...' % account_id)
     # We need account-level resources
     for resource in _ACIT_ACCOUNT_RESOURCES:
-      # TODO: Remove after shippingsettings.list is fixed.
+      # TODO(b/305301891): Remove after shippingsettings.list is fixed.
       if (
           account_id in standalone_ids
           or resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
