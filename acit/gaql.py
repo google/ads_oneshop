@@ -70,12 +70,19 @@ _PREFIX = flags.DEFINE_string(
     'The prefix to add to each query file. Useful for selecting files.',
 )
 
+_ADS_API_VERSION = flags.DEFINE_string(
+    'ads_api_version',
+    'v14',
+    'The version of the Ads API to use',
+)
+
 
 # TODO: Add flag for querying a single account
 class QueryMode(enum.Enum):
   LEAVES = 'leaves'
   MCCS = 'mccs'
   ALL = 'all'
+  SINGLE = 'single'
 
 
 _MODE = flags.DEFINE_enum_class(
@@ -84,11 +91,13 @@ _MODE = flags.DEFINE_enum_class(
 
 
 def get_children_query(mode: QueryMode = QueryMode.LEAVES):
-  is_manager = ''
+  clause = 'AND customer_client.id'
+  if mode == QueryMode.SINGLE:
+    clause = 'AND customer_client.level = 0'
   if mode == QueryMode.LEAVES:
-    is_manager = 'AND customer_client.manager = false'
+    clause = 'AND customer_client.manager = false'
   if mode == QueryMode.MCCS:
-    is_manager = 'AND customer_client.manager = true'
+    clause = 'AND customer_client.manager = true'
 
   return textwrap.dedent(
       f"""\
@@ -100,7 +109,7 @@ def get_children_query(mode: QueryMode = QueryMode.LEAVES):
   FROM customer_client
   WHERE
     customer_client.status = 'ENABLED'
-    {is_manager}"""
+    {clause}"""
   )
 
 
@@ -191,7 +200,9 @@ def run_query(
 
 def main(unused_argv):
   # TODO: Parameterize the client constructor
-  ads_client = client.GoogleAdsClient.load_from_storage()
+  ads_client = client.GoogleAdsClient.load_from_storage(
+      version=_ADS_API_VERSION.value
+  )
   ads_client.login_customer_id = _LOGIN_CUSTOMER_ID.value
   query = _QUERY.value or GAQL_CAMPAIGNS
   run_query(

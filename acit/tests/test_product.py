@@ -16,6 +16,11 @@ from absl.testing import parameterized
 
 from acit import product as product_util
 
+_PRODUCT_CATEGORIES_BY_ID = {
+    '1': 'Animals & Pet Supplies',
+    '2': 'Other',
+}
+
 
 class ProductTest(parameterized.TestCase):
 
@@ -205,7 +210,9 @@ class ProductTest(parameterized.TestCase):
       self, product, dimension, expected
   ):
     self.assertEqual(
-        product_util.dimension_matches_product(product, dimension),
+        product_util.dimension_matches_product(
+            product, dimension, _PRODUCT_CATEGORIES_BY_ID
+        ),
         expected,
     )
 
@@ -265,5 +272,8 @@ class ProductTest(parameterized.TestCase):
   )
   def test_product_targeted_by_tree(self, product, tree, expected):
     self.assertEqual(
-        product_util.product_targeted_by_tree(product, tree), expected
+        product_util.product_targeted_by_tree(
+            product, tree, _PRODUCT_CATEGORIES_BY_ID
+        ),
+        expected,
     )

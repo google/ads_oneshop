@@ -14,7 +14,6 @@
 """Merchant Center product data helpers."""
 
 
-import itertools
 from typing import Optional, Dict, Tuple, List, Callable, Any, TypedDict, Iterable
 
 from importlib import resources
@@ -152,29 +151,6 @@ def set_product_approved(product):
   return product
 
 
-def inner_join_product_and_status(k: Tuple[str, str], v):
-  """Post-CoGroupByKey inner-join for 1:1 products and statuses.
-
-  Used via beam.FlatMapTuple()
-
-  Args:
-    k: The composite merchant, offer key from the CoGroupByKey stage.
-    v: The products and statuses associated with this key.
-
-  Yields:
-    A composite product status object with IDs lifted up.
-  """
-  merchant_id, offer_id = k
-  # This should always be 1:1
-  for t in itertools.product(v['products'], v['statuses']):
-    yield {
-        'accountId': merchant_id,
-        'offerId': offer_id,
-        'product': t[0],
-        'status': t[1],
-    }
-
-
 def taxonomy_matches_dimension(
     product_taxonomy: str,
     dimension: Any,
@@ -237,21 +213,25 @@ def dimension_is_wildcard(dimension) -> bool:
   return False
 
 
-def dimension_matches_product(product: Any, dimension: Any):
+def dimension_matches_product(
+    product: Any, dimension: Any, category_names_by_id: dict[str, str]
+):
   """Whether the provided dimension matches the product."""
   if dimension_is_wildcard(dimension):
     return True
 
   if 'productBiddingCategory' in dimension:
-    return taxonomy_matches_dimension(
-        product.get('googleProductCategory', ''),
-        dimension,
-        'productBiddingCategory',
-        'level',
-        _PRODUCT_DIMENSION_LEVELS,
-        lambda dimension, taxonomy: int(dimension['id'])
-        == CACHE.id_by_path(taxonomy),
-    )
+    level = dimension['productBiddingCategory']['level']
+    id_ = dimension['productBiddingCategory']['id']
+
+    taxonomy_index = _PRODUCT_DIMENSION_LEVELS.index(level)
+    taxonomy_tokens = product.get('googleProductCategory', '').split(' > ')
+    if not taxonomy_index < len(taxonomy_tokens):
+      # Ad criteria is too granular
+      return False
+    category_to_match = taxonomy_tokens[taxonomy_index]
+    category = category_names_by_id[id_]
+    return category_to_match == category
 
   # All string comparisons should be case-insensitive
   # Ads and MC have inconsistent case processing.
@@ -340,7 +320,9 @@ class ProductTargetingTree(TypedDict):
   node: ProductTargetingNode
 
 
-def product_targeted_by_tree(product, node: ProductTargetingNode) -> bool:
+def product_targeted_by_tree(
+    product, node: ProductTargetingNode, category_names_by_id: dict[str, str]
+) -> bool:
   """Recursively checks whether a product is targeted by a tree."""
   is_targeted = node.get('isTargeted')
   if is_targeted is not None:
@@ -359,11 +341,11 @@ def product_targeted_by_tree(product, node: ProductTargetingNode) -> bool:
       return False
     if dimension_is_wildcard(dimension):
       wildcard = child
-    elif dimension_matches_product(product, dimension):
+    elif dimension_matches_product(product, dimension, category_names_by_id):
       matcher = child
   first_match = matcher or wildcard
   assert first_match
-  return product_targeted_by_tree(product, first_match)
+  return product_targeted_by_tree(product, first_match, category_names_by_id)
 
 
 def build_product_group_tree(
@@ -398,7 +380,12 @@ def build_product_group_tree(
   build_product_group_tree(rest, child, is_targeted)
 
 
-def campaign_matches_product_status(campaign: Campaign, product_status) -> bool:
+def campaign_matches_product_status(
+    campaign: Campaign,
+    product_status,
+    category_names_by_id,
+    language_codes_by_resource_name,
+) -> bool:
   # TODO: unit test this
   product = product_status['product']
   if campaign['merchant_id'] != product_status['accountId']:
@@ -409,18 +396,17 @@ def campaign_matches_product_status(campaign: Campaign, product_status) -> bool:
   if not campaign['enable_local'] and product['channel'] == 'local':
     return False
   for dimension in campaign['inventory_filter_dimensions']:
-    if not dimension_matches_product(product, dimension):
+    if not dimension_matches_product(product, dimension, category_names_by_id):
       return False
-
-  # TODO: re-enable after language constants are incorporated and tested
-  return True
 
   # Language targeting
   positive_languages = [
-      lang['language'] for lang in campaign['languages'] if lang['is_targeted']
+      language_codes_by_resource_name[lang['language']]
+      for lang in campaign['languages']
+      if lang['is_targeted']
   ]
   negative_languages = [
-      lang['language']
+      language_codes_by_resource_name[lang['language']]
       for lang in campaign['languages']
       if not lang['is_targeted']
   ]
@@ -439,6 +425,8 @@ def get_campaign_targeting(
     product: Any,
     trees_by_campaign_id: dict[str, list[ProductTargetingTree]],
     campaigns_by_merchant_id: dict[str, list[Campaign]],
+    category_names_by_id: dict[str, str],
+    language_codes_by_resource_name: dict[str, str],
 ) -> Iterable[Tuple[Any, list[ProductTargetingTree]]]:
   """Determines whether a product is targeted by any visible campaigns.
 
@@ -456,10 +444,14 @@ def get_campaign_targeting(
 
   matched_trees = []
   for campaign in campaigns_by_merchant_id.get(product['accountId'], []):
-    if not campaign_matches_product_status(campaign, product):
+    if not campaign_matches_product_status(
+        campaign, product, category_names_by_id, language_codes_by_resource_name
+    ):
       continue
     for tree in trees_by_campaign_id[campaign['campaign_id']]:
-      if product_targeted_by_tree(product['product'], tree['node']):
+      if product_targeted_by_tree(
+          product['product'], tree['node'], category_names_by_id
+      ):
         matched_trees.append(tree)
 
   return [(product, matched_trees)]

@@ -56,7 +56,13 @@ _CUSTOMER_IDS = flags.DEFINE_multi_string(
 _MERCHANT_CENTER_IDS = flags.DEFINE_multi_string(
     'merchant_id',
     '',
-    ('The Merchant account ID. ' 'Expands Multi-client accounts.'),
+    'The Merchant account ID. Expands Multi-client accounts.',
+)
+
+_OUTPUT_DIR = flags.DEFINE_string(
+    'output',
+    '/tmp/acit',
+    'The output directory for this data',
 )
 
 # NOTE: Always add customer.id to a query for uniqueness.
@@ -66,6 +72,7 @@ _MERCHANT_CENTER_IDS = flags.DEFINE_multi_string(
 _GAQL_SHOPPING_PERFORMANCE_VIEW = """
 SELECT
   customer.id,
+  campaign.id,
   segments.product_merchant_id,
   segments.product_channel,
   segments.product_language,
@@ -146,19 +153,6 @@ WHERE
 """
 
 # Asset group - PMax only
-# Asset group listing filter (No metrics)
-# TODO: Will this need to be recursive due to parent filters?
-#       Need to understand more.
-# TODO: Check against 'UNSPECIFIED' product channel and condition.
-# NOTE: product_item_id = offer_id
-# NOTE: bidding_category = MC Google Product Category (<= 5)
-# NOTE: custom_attribute = MC Custom Label (<= 5), 1-indexed
-# NOTE: product_type = MC Product Category (<= 5), 1-indexed
-# NOTE: type:UNIT_INCLUDED = case value is targeted leaf; path provides parents.
-
-# NOTE: Channel Exclusivity isn't really a targeting thing.
-# TODO: Filter only for Ads channels, not free listings or similar.
-
 _GAQL_ASSET_GROUP_LISTING_FILTER = """
 SELECT
   customer.id,
@@ -175,15 +169,52 @@ WHERE
   AND asset_group_listing_group_filter.type IN ('UNIT_INCLUDED', 'UNIT_EXCLUDED')
 """
 
-_ALL_GAQL = {
-    'campaign': _GAQL_CAMPAIGN_SETTINGS,
-    'campaign_criterion': _GAQL_CAMPAIGN_CRITERIA,
-    'ad_group_criterion': _GAQL_AD_GROUP_CRITERIA,
-    'asset_group_listing_filter': _GAQL_ASSET_GROUP_LISTING_FILTER,
-    'shopping_performance_view': _GAQL_SHOPPING_PERFORMANCE_VIEW,
-}
+_GAQL_LANGUAGE_CONSTANTS = """
+SELECT
+  language_constant.code,
+  language_constant.name,
+  language_constant.resource_name
+FROM language_constant
+WHERE
+  language_constant.targetable = TRUE
+"""
 
-_ACIT_OUTPUT_DIR = '/tmp/acit'
+_GAQL_PRODUCT_CATEGORIES = """
+SELECT
+  product_bidding_category_constant.id,
+  product_bidding_category_constant.localized_name
+FROM product_bidding_category_constant
+WHERE
+  product_bidding_category_constant.status = 'ACTIVE'
+  AND product_bidding_category_constant.language_code = 'en'
+  AND product_bidding_category_constant.country_code = 'US'
+"""
+
+_ALL_GAQL = [
+    ('campaign', _GAQL_CAMPAIGN_SETTINGS, gaql.QueryMode.LEAVES),
+    ('campaign_criterion', _GAQL_CAMPAIGN_CRITERIA, gaql.QueryMode.LEAVES),
+    ('ad_group_criterion', _GAQL_AD_GROUP_CRITERIA, gaql.QueryMode.LEAVES),
+    (
+        'asset_group_listing_filter',
+        _GAQL_ASSET_GROUP_LISTING_FILTER,
+        gaql.QueryMode.LEAVES,
+    ),
+    (
+        'shopping_performance_view',
+        _GAQL_SHOPPING_PERFORMANCE_VIEW,
+        gaql.QueryMode.LEAVES,
+    ),
+    (
+        'language_constant',
+        _GAQL_LANGUAGE_CONSTANTS,
+        gaql.QueryMode.SINGLE,
+    ),
+    (
+        'product_category',
+        _GAQL_PRODUCT_CATEGORIES,
+        gaql.QueryMode.SINGLE,
+    ),
+]
 
 _ACIT_ADS_PREFIX = 'acit_ads'
 _ACIT_ADS_OUTPUT_DIR = 'ads'
@@ -212,7 +243,7 @@ _ACIT_ACCOUNT_RESOURCES = [
 def main(_):
   now = datetime.datetime.today().isoformat()
 
-  acit_output_dir = os.path.join(_ACIT_OUTPUT_DIR, now)
+  acit_output_dir = os.path.join(_OUTPUT_DIR.value, now)
   acit_ads_output_dir = os.path.join(acit_output_dir, _ACIT_ADS_OUTPUT_DIR)
   acit_mc_output_dir = os.path.join(acit_output_dir, _ACIT_MC_OUTPUT_DIR)
 
@@ -230,7 +261,7 @@ def main(_):
         version=ADS_API_VERSION
     )
     ads_client.login_customer_id = customer_id
-    for resource, query in _ALL_GAQL.items():
+    for resource, query, mode in _ALL_GAQL:
       logging.info('...pulling resource %s...' % resource)
       output_dir = os.path.join(acit_ads_output_dir, customer_id, resource)
       pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -240,6 +271,7 @@ def main(_):
           customer_id=customer_id,
           prefix=f'{_ACIT_ADS_PREFIX}_{resource}',
           output_dir=output_dir,
+          query_mode=mode,
       )
   logging.info('Done loading Ads data.')
 
@@ -304,7 +336,7 @@ def main(_):
           parent_params={},
           resource_method='get',
           result_path='',
-          metadata={},
+          metadata={'accountId': aggregator_id},
           is_scalar=True,
       ):
         children = []
@@ -320,7 +352,7 @@ def main(_):
             parent_params={},
             resource_method='list',
             result_path='resources',
-            metadata={},
+            metadata={'parentId': aggregator_id},
         ):
           children.append(child)
           if name == _ACIT_MC_ACCOUNT_RESOURCE:
@@ -407,8 +439,8 @@ def main(_):
   if unprocessed:
     logging.warn(
         (
-            'This credential does not have access to the following '
-            'input account(s): %s. Some data may be missing.'
+            'This credential does not have direct acccess to the following '
+            'input account(s): %s. Some data may be missing. '
         )
         % ' ,'.join(unprocessed)
     )
