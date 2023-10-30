@@ -61,19 +61,17 @@ run_pipeline() {
 
 upload_to_bq() {
   rm -rf "${BQ_DIR}" && mkdir -p "${BQ_DIR}"
+  cat $(find "${SOURCES_DIR}" -type f | grep accounts) > "${BQ_DIR}/accounts.jsonlines"
   cat $(find "${SOURCES_DIR}" -type f | grep shippingsettings) > "${BQ_DIR}/shippingsettings.jsonlines"
   cat $(find "${SOURCES_DIR}" -type f | grep liasettings) > "${BQ_DIR}/liasettings.jsonlines"
-  cat $(find "${SOURCES_DIR}" -type f | grep accounts) > "${BQ_DIR}/accounts.jsonlines"
   cat $(find "${SOURCES_DIR}" -type f | grep performance) > "${BQ_DIR}/performance.jsonlines"
-  cat $(find "${SINKS_DIR}" -type f | grep wide_products_table ) > "${BQ_DIR}/products_table.jsonlines"
-  BQ_FLAGS="--autodetect \
-    --location=${DATASET_LOCATION} \
+  cat $(find "${SOURCES_DIR}" -type f | grep language) > "${BQ_DIR}/language.jsonlines"
+  cat $(find "${SINKS_DIR}" -type f | grep wide_products_table ) > "${BQ_DIR}/products.jsonlines"
+  BQ_FLAGS_BASE="--location=${DATASET_LOCATION} \
     --replace=true \
     --source_format=NEWLINE_DELIMITED_JSON"
 
-  bq load $BQ_FLAGS \
-    "${PROJECT_NAME}:${DATASET_NAME}.products" \
-    "${BQ_DIR}/products_table.jsonlines"
+  BQ_FLAGS="--autodetect ${BQ_FLAGS_BASE}"
 
   bq load $BQ_FLAGS \
     "${PROJECT_NAME}:${DATASET_NAME}.accounts" \
@@ -90,6 +88,15 @@ upload_to_bq() {
   bq load $BQ_FLAGS \
     "${PROJECT_NAME}:${DATASET_NAME}.performance" \
     "${BQ_DIR}/performance.jsonlines"
+
+  bq load $BQ_FLAGS \
+    "${PROJECT_NAME}:${DATASET_NAME}.language" \
+    "${BQ_DIR}/language.jsonlines"
+
+  bq load $BQ_FLAGS_BASE \
+    "${PROJECT_NAME}:${DATASET_NAME}.products" \
+    "${BQ_DIR}/products.jsonlines" \
+    acit/schemas/acit/Products.schema
 }
 
 pull_data

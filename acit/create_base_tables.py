@@ -36,6 +36,9 @@ from acit import performance_max
 from acit import shopping
 from acit import product
 from acit import resource_downloader
+from acit import schema_pb2
+
+from google.protobuf import json_format
 
 import apache_beam as beam
 from apache_beam.io import textio
@@ -293,8 +296,8 @@ def main(argv):
         >> beam.MapTuple(
             lambda product, trees: {
                 **product,
-                'hasPMaxTargeting': True if trees else False,
-                'pMaxCampaignIds': list(set([t['campaign_id'] for t in trees])),
+                'hasPerformanceMaxTargeting': True if trees else False,
+                'performanceMaxCampaignIds': list(set([t['campaign_id'] for t in trees])),
             }
         )
         # Add Shopping targeting. Side-input views provide in-memory lookups.
@@ -319,8 +322,12 @@ def main(argv):
     )
 
     def products_table_row(row):
-      # TODO: use this for the final products table schema
-      return row
+      """Prepare data for JSON serialization."""
+      del row['product']['downloaderMetadata']
+      del row['status']['downloaderMetadata']
+      msg = schema_pb2.WideProduct()
+      json_format.ParseDict(row, msg)
+      return json_format.MessageToDict(msg, preserving_proto_field_name=True)
 
     _ = (
         all_products

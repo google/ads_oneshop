@@ -1,0 +1,400 @@
+syntax = "proto3";
+
+package acit;
+
+import "acit/bq_table.proto";
+
+message WideProduct {
+  option (gen_bq_schema.bigquery_opts).table_name = "Products";
+  optional Product product = 1;
+  optional ProductStatus status = 2;
+  optional bool has_performance_max_targeting = 3;
+  repeated int64 performance_max_campaign_ids = 4;
+  optional bool has_shopping_targeting = 5;
+  repeated int64 shopping_campaign_ids = 6;
+  optional bool in_stock = 7;
+  repeated string approved_countries = 8;
+  repeated string pending_countries = 9;
+  repeated string disapproved_countries = 10;
+  optional string offer_id = 11;
+  optional string account_id = 12;
+}
+
+message Product {
+  optional string id = 1;
+
+  optional string offer_id = 2;
+
+  optional string title = 3;
+
+  optional string description = 4;
+
+  optional string link = 5;
+
+  optional string image_link = 6;
+
+  repeated string additional_image_links = 7;
+
+  repeated string lifestyle_image_links = 126;
+
+  optional string content_language = 8;
+
+  optional string target_country = 9;
+
+  optional string feed_label = 125;
+
+  optional string channel = 10;
+
+  optional string expiration_date = 11;
+
+  optional string disclosure_date = 128;
+
+  optional bool adult = 12;
+
+  optional string kind = 13;
+
+  optional string brand = 16;
+
+  optional string color = 17;
+
+  optional string google_product_category = 24;
+
+  optional string gtin = 25;
+
+  optional string item_group_id = 26;
+
+  optional string material = 28;
+
+  optional string mpn = 29;
+
+  optional string pattern = 30;
+
+  optional Price price = 32;
+
+  optional Price sale_price = 37;
+
+  optional string sale_price_effective_date = 38;
+
+  optional ProductDimension product_height = 119;
+
+  optional ProductDimension product_length = 120;
+
+  optional ProductDimension product_width = 121;
+
+  optional ProductWeight product_weight = 122;
+
+  repeated ProductShipping shipping = 39;
+
+  optional ProductShippingWeight shipping_weight = 40;
+
+  repeated string sizes = 41;
+
+  repeated ProductTax taxes = 42;
+
+  repeated CustomAttribute custom_attributes = 49;
+
+  optional bool identifier_exists = 53;
+
+  optional Installment installment = 54;
+
+  optional LoyaltyPoints loyalty_points = 55;
+
+  optional int64 multipack = 59;
+
+  optional string custom_label0 = 60;
+
+  optional string custom_label1 = 61;
+
+  optional string custom_label2 = 62;
+
+  optional string custom_label3 = 63;
+
+  optional string custom_label4 = 64;
+
+  optional bool is_bundle = 65;
+
+  optional string mobile_link = 66;
+
+  optional string availability_date = 67;
+
+  optional string shipping_label = 70;
+
+  optional ProductUnitPricingMeasure unit_pricing_measure = 71;
+
+  optional ProductUnitPricingBaseMeasure unit_pricing_base_measure = 72;
+
+  optional ProductShippingDimension shipping_length = 73;
+
+  optional ProductShippingDimension shipping_width = 74;
+
+  optional ProductShippingDimension shipping_height = 75;
+
+  optional string display_ads_id = 76;
+
+  repeated string display_ads_similar_ids = 77;
+
+  optional string display_ads_title = 78;
+
+  optional string display_ads_link = 79;
+
+  optional double display_ads_value = 80;
+
+  optional int64 sell_on_google_quantity = 82;
+
+  repeated string promotion_ids = 83;
+
+  optional int64 max_handling_time = 85;
+
+  optional int64 min_handling_time = 86;
+
+  optional Price cost_of_goods_sold = 87;
+
+  optional string source = 90;
+
+  repeated string included_destinations = 91;
+
+  repeated string excluded_destinations = 92;
+
+  optional string ads_grouping = 93;
+
+  repeated string ads_labels = 94;
+
+  optional string ads_redirect = 95;
+
+  repeated string product_types = 96;
+
+  optional string age_group = 97;
+
+  optional string availability = 98;
+
+  optional string condition = 99;
+
+  optional string gender = 100;
+
+  optional string size_system = 101;
+
+  optional string size_type = 102;
+
+  optional string additional_size_type = 114;
+
+  optional string energy_efficiency_class = 103;
+
+  optional string min_energy_efficiency_class = 104;
+
+  optional string max_energy_efficiency_class = 105;
+
+  optional string tax_category = 106;
+
+  optional string transit_time_label = 107;
+
+  repeated string shopping_ads_excluded_countries = 109;
+
+  optional string pickup_method = 115;
+
+  optional string pickup_sla = 116;
+
+  optional string link_template = 117;
+
+  optional string mobile_link_template = 118;
+
+  repeated ProductProductDetail product_details = 110;
+
+  repeated string product_highlights = 111;
+
+  optional ProductSubscriptionCost subscription_cost = 112;
+
+  optional string canonical_link = 113;
+
+  optional string external_seller_id = 123;
+
+  optional string pause = 124;
+
+  optional string virtual_model_link = 130;
+
+  repeated CloudExportAdditionalProperties cloud_export_additional_properties =
+      127;
+
+  repeated ProductCertification certifications = 129;
+}
+message Price {
+  optional string value = 1;
+
+  optional string currency = 2;
+}
+message ProductDimension {
+  optional double value = 1;
+
+  optional string unit = 2;
+}
+message ProductWeight {
+  optional double value = 1;
+
+  optional string unit = 2;
+}
+message ProductShipping {
+  optional Price price = 1;
+
+  optional string country = 2;
+
+  optional string region = 3;
+
+  optional string service = 4;
+
+  repeated string service_alternative_list = 212;
+
+  optional int64 location_id = 5;
+
+  optional string location_group_name = 6;
+
+  optional string postal_code = 7;
+
+  optional int64 min_handling_time = 8;
+
+  optional int64 max_handling_time = 9;
+
+  optional int64 min_transit_time = 10;
+
+  optional int64 max_transit_time = 11;
+}
+message ProductUnitPricingBaseMeasure {
+  optional int64 value = 1;
+
+  optional string unit = 2;
+}
+message ProductUnitPricingMeasure {
+  optional double value = 1;
+
+  optional string unit = 2;
+}
+message ProductShippingWeight {
+  optional double value = 1;
+
+  optional string unit = 2;
+}
+message ProductTax {
+  optional double rate = 1;
+
+  optional string country = 2;
+
+  optional string region = 3;
+
+  optional bool tax_ship = 4;
+
+  optional int64 location_id = 5;
+
+  optional string postal_code = 6;
+}
+message CustomAttribute {
+  optional string name = 1;
+
+  optional string value = 4;
+
+  repeated CustomAttribute group_values = 5;
+}
+message Installment {
+  optional int64 months = 1;
+
+  optional Price amount = 2;
+}
+message LoyaltyPoints {
+  optional string name = 1;
+
+  optional int64 points_value = 2;
+
+  optional double ratio = 3;
+}
+
+message ProductShippingDimension {
+  optional double value = 1;
+
+  optional string unit = 2;
+}
+message ProductProductDetail {
+  optional string section_name = 1;
+
+  optional string attribute_name = 2;
+
+  optional string attribute_value = 3;
+}
+
+message ProductSubscriptionCost {
+  optional string period = 1;
+
+  optional int64 period_length = 2;
+
+  optional Price amount = 3;
+}
+message CloudExportAdditionalProperties {
+  optional string property_name = 1;
+
+  repeated string text_value = 2;
+
+  optional bool bool_value = 3;
+
+  repeated int64 int_value = 4;
+
+  repeated float float_value = 5;
+
+  optional float min_value = 6;
+
+  optional float max_value = 7;
+
+  optional string unit_code = 8;
+}
+
+message ProductCertification {
+  optional string certification_authority = 1;
+
+  optional string certification_name = 2;
+
+  optional string certification_code = 3;
+}
+message ProductStatus {
+  optional string product_id = 1;
+
+  optional string title = 2;
+
+  optional string link = 3;
+
+  repeated ProductStatusDestinationStatus destination_statuses = 4;
+
+  optional string kind = 5;
+
+  optional string creation_date = 6;
+
+  optional string last_update_date = 7;
+
+  optional string google_expiration_date = 8;
+
+  repeated ProductStatusItemLevelIssue item_level_issues = 10;
+}
+message ProductStatusDestinationStatus {
+  optional string destination = 1;
+
+  optional string status = 5 [deprecated = true];
+
+  repeated string approved_countries = 6;
+
+  repeated string pending_countries = 7;
+
+  repeated string disapproved_countries = 8;
+}
+message ProductStatusItemLevelIssue {
+  optional string code = 1;
+
+  optional string servability = 2;
+
+  optional string resolution = 3;
+
+  optional string attribute_name = 4;
+
+  optional string destination = 5;
+
+  optional string description = 6;
+
+  optional string detail = 7;
+
+  optional string documentation = 8;
+
+  repeated string applicable_countries = 9;
+}

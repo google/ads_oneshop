@@ -1,0 +1,1090 @@
+[
+ {
+  "name": "product",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "offer_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "title",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "description",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "image_link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "additional_image_links",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "lifestyle_image_links",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "content_language",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "target_country",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "feed_label",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "channel",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "expiration_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "disclosure_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "adult",
+    "type": "BOOLEAN",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "kind",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "brand",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "color",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "google_product_category",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "gtin",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "item_group_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "material",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "mpn",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "pattern",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "price",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "currency",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "sale_price",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "currency",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "sale_price_effective_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "product_height",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "product_length",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "product_width",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "product_weight",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "shipping",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "price",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "value",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "currency",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "country",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "region",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "service",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "service_alternative_list",
+      "type": "STRING",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "location_id",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "location_group_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "postal_code",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "min_handling_time",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "max_handling_time",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "min_transit_time",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "max_transit_time",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "shipping_weight",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "sizes",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "taxes",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "rate",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "country",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "region",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "tax_ship",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "location_id",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "postal_code",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "custom_attributes",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "value",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "identifier_exists",
+    "type": "BOOLEAN",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "installment",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "months",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "amount",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "value",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "currency",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "loyalty_points",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "points_value",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "ratio",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "multipack",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "custom_label0",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "custom_label1",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "custom_label2",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "custom_label3",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "custom_label4",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "is_bundle",
+    "type": "BOOLEAN",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "mobile_link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "availability_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "shipping_label",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "unit_pricing_measure",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "unit_pricing_base_measure",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "shipping_length",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "shipping_width",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "shipping_height",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "display_ads_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "display_ads_similar_ids",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "display_ads_title",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "display_ads_link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "display_ads_value",
+    "type": "FLOAT",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "sell_on_google_quantity",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "promotion_ids",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "max_handling_time",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "min_handling_time",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "cost_of_goods_sold",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "value",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "currency",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "source",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "included_destinations",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "excluded_destinations",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "ads_grouping",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "ads_labels",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "ads_redirect",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "product_types",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "age_group",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "availability",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "condition",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "gender",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "size_system",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "size_type",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "additional_size_type",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "energy_efficiency_class",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "min_energy_efficiency_class",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "max_energy_efficiency_class",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "tax_category",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "transit_time_label",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "shopping_ads_excluded_countries",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "pickup_method",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "pickup_sla",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "link_template",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "mobile_link_template",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "product_details",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "section_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "attribute_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "attribute_value",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "product_highlights",
+    "type": "STRING",
+    "mode": "REPEATED"
+   },
+   {
+    "name": "subscription_cost",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+     {
+      "name": "period",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "period_length",
+      "type": "INTEGER",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "amount",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "value",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "currency",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "canonical_link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "external_seller_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "pause",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "virtual_model_link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "cloud_export_additional_properties",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "property_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "text_value",
+      "type": "STRING",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "bool_value",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "int_value",
+      "type": "INTEGER",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "float_value",
+      "type": "FLOAT",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "min_value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "max_value",
+      "type": "FLOAT",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "unit_code",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   },
+   {
+    "name": "certifications",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "certification_authority",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "certification_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "certification_code",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "status",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "product_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "title",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "link",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "destination_statuses",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "destination",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "status",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "approved_countries",
+      "type": "STRING",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "pending_countries",
+      "type": "STRING",
+      "mode": "REPEATED"
+     },
+     {
+      "name": "disapproved_countries",
+      "type": "STRING",
+      "mode": "REPEATED"
+     }
+    ]
+   },
+   {
+    "name": "kind",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "creation_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "last_update_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "google_expiration_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "item_level_issues",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "code",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "servability",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "resolution",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "attribute_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "destination",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "description",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "detail",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "documentation",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "applicable_countries",
+      "type": "STRING",
+      "mode": "REPEATED"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "name": "has_performance_max_targeting",
+  "type": "BOOLEAN",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "performance_max_campaign_ids",
+  "type": "INTEGER",
+  "mode": "REPEATED"
+ },
+ {
+  "name": "has_shopping_targeting",
+  "type": "BOOLEAN",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "shopping_campaign_ids",
+  "type": "INTEGER",
+  "mode": "REPEATED"
+ },
+ {
+  "name": "in_stock",
+  "type": "BOOLEAN",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "approved_countries",
+  "type": "STRING",
+  "mode": "REPEATED"
+ },
+ {
+  "name": "pending_countries",
+  "type": "STRING",
+  "mode": "REPEATED"
+ },
+ {
+  "name": "disapproved_countries",
+  "type": "STRING",
+  "mode": "REPEATED"
+ },
+ {
+  "name": "offer_id",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "account_id",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ }
+]
