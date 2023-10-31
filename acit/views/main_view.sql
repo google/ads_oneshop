@@ -31,8 +31,8 @@ WITH
     P.in_stock,
     ARRAY_LENGTH(ARRAY_CONCAT(P.performance_max_campaign_ids, P.shopping_campaign_ids)) > 0 AS is_targeted,
     ARRAY_LENGTH(P.approved_countries) > 0 AND ARRAY_LENGTH(P.disapproved_countries) = 0 AND ARRAY_LENGTH(P.pending_countries) = 0 AS is_approved,
-    P.product.brand,
-    P.product.gtin,
+    IFNULL(P.product.brand, '') AS brand,
+    IFNULL(P.product.gtin, '') AS gtin,
   FROM
     `${PROJECT_NAME}.${DATASET_NAME}.products` AS P),
   Ads AS (

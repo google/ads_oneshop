@@ -65,6 +65,12 @@ _OUTPUT_DIR = flags.DEFINE_string(
     'The output directory for this data',
 )
 
+_ADMIN_RIGHTS = flags.DEFINE_boolean(
+    'admin',
+    True,
+    'Whether to run against Merchant Center with admin privileges.'
+)
+
 # NOTE: Always add customer.id to a query for uniqueness.
 
 # NOTE: Merchant Center FK has the form of channel:language:feed_label:item_id
@@ -145,7 +151,6 @@ SELECT
 FROM ad_group_criterion
 WHERE
   ad_group_criterion.status = 'ENABLED'
-  AND ad_group_criterion.negative = FALSE
   AND campaign.status = 'ENABLED'
   AND ad_group.status = 'ENABLED'
   AND ad_group_criterion.type IN ('LISTING_GROUP')
@@ -235,10 +240,13 @@ _ACIT_MC_SHIPPINGSETTINGS_RESOURCE = 'shippingsettings'
 # If that entry is from an MCA, it will have a 'children' key.
 _ACIT_ACCOUNT_RESOURCES = [
     _ACIT_MC_ACCOUNT_RESOURCE,
+]
+
+# Additional resources which are only available to admins.
+_ACIT_ACCOUNT_ADMIN_RESOURCES = [
     'liasettings',
     _ACIT_MC_SHIPPINGSETTINGS_RESOURCE,
 ]
-
 
 def main(_):
   now = datetime.datetime.today().isoformat()
@@ -318,11 +326,16 @@ def main(_):
       else:
         aggregator_ids.add(account_identifier['aggregatorId'])
 
+  # Decide which resources to pull
+  acit_account_resources = _ACIT_ACCOUNT_RESOURCES
+  if _ADMIN_RIGHTS.value:
+    acit_account_resources += _ACIT_ACCOUNT_ADMIN_RESOURCES
+
   # Top-level settings must roll down  (if they exist) from MCAs.
   # Top-level settings include image enhancement, LIA, Ads links, etc
   # This significantly complicates the data model (especially for Ads links)
   for aggregator_id in aggregator_ids.intersection(input_ids):
-    for name in _ACIT_ACCOUNT_RESOURCES:
+    for name in acit_account_resources:
       if name == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE:
         # This shippingsettings.list is failing. Use get below.
         continue
@@ -370,7 +383,7 @@ def main(_):
   for account_id in leaf_ids | (standalone_ids & input_ids):
     logging.info('Processing Merchant Center ID %s...' % account_id)
     # We need account-level resources
-    for resource in _ACIT_ACCOUNT_RESOURCES:
+    for resource in acit_account_resources:
       # TODO(b/305301891): Remove after shippingsettings.list is fixed.
       if (
           account_id in standalone_ids

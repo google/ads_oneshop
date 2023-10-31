@@ -151,7 +151,7 @@ def main(argv):
                 {
                     'language': c['campaignCriterion']['language'][
                         'languageConstant'
-                    ].lower(),
+                    ],
                     'is_targeted': not c['campaignCriterion']['negative'],
                 },
             )
