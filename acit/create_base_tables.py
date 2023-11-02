@@ -297,7 +297,9 @@ def main(argv):
             lambda product, trees: {
                 **product,
                 'hasPerformanceMaxTargeting': True if trees else False,
-                'performanceMaxCampaignIds': list(set([t['campaign_id'] for t in trees])),
+                'performanceMaxCampaignIds': list(
+                    set([t['campaign_id'] for t in trees])
+                ),
             }
         )
         # Add Shopping targeting. Side-input views provide in-memory lookups.

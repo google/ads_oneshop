@@ -68,7 +68,7 @@ _OUTPUT_DIR = flags.DEFINE_string(
 _ADMIN_RIGHTS = flags.DEFINE_boolean(
     'admin',
     True,
-    'Whether to run against Merchant Center with admin privileges.'
+    'Whether to run against Merchant Center with admin privileges.',
 )
 
 # NOTE: Always add customer.id to a query for uniqueness.
@@ -247,6 +247,7 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
     'liasettings',
     _ACIT_MC_SHIPPINGSETTINGS_RESOURCE,
 ]
+
 
 def main(_):
   now = datetime.datetime.today().isoformat()

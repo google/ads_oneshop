@@ -16,8 +16,6 @@
 
 from typing import Optional, Dict, Tuple, List, Callable, Any, TypedDict, Iterable
 
-from importlib import resources
-
 # 1-indexed dimension levels
 _PRODUCT_DIMENSION_LEVELS = [
     'LEVEL1',
@@ -35,56 +33,6 @@ _PRODUCT_DIMENSION_INDICES = [
     'INDEX3',
     'INDEX4',
 ]
-
-_PRODUCT_CATEGORY_FILE = 'taxonomy-with-ids.en-US.txt'
-
-# We load this later
-CACHE: Optional['ProductCategoryCache'] = None
-
-
-class ProductCategoryCache:
-  """Caches Google Ads product category path lookups."""
-
-  def __init__(self):
-    self._loaded = False
-    self._id_cache: Dict[int, str] = {}
-    self._path_cache: Dict[str, int] = {}
-
-  def load(self) -> None:
-    """Initializes the cache."""
-    if not self._loaded:
-      with resources.files(__name__.rsplit('.', 1)[0]).joinpath(
-          _PRODUCT_CATEGORY_FILE
-      ).open('r') as f:
-        for line in f:
-          if line.startswith('#'):
-            continue
-          id_, path = line.strip().split(' - ')
-          id_ = int(id_)
-          self._id_cache[id_] = path
-          self._path_cache[path] = id_
-    self._loaded = True
-
-  def path_by_id(self, id_: int) -> Optional[str]:
-    """Gets the path for this leaf ID, or None."""
-    self.load()
-    return self._id_cache.get(id_)
-
-  def id_by_path(self, path: str) -> Optional[int]:
-    """Gets the ID by the path.
-
-    Args:
-      path: The full path of the Google Product taxonomy.
-
-    Returns:
-      The ID of the leaf in this path.
-    """
-    self.load()
-    return self._path_cache.get(path)
-
-
-CACHE = ProductCategoryCache()
-CACHE.load()
 
 
 class TargetedLanguage(TypedDict):
@@ -191,8 +139,6 @@ def taxonomy_matches_dimension(
     return test(info, product_taxonomy)
   return False
 
-
-assert CACHE
 
 _WILDCARD_DIMENSION_PATHS = {
     'productBiddingCategory': 'id',
