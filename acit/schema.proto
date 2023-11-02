@@ -20,6 +20,14 @@ message WideProduct {
   optional string account_id = 12;
 }
 
+message CombinedLiaSettings {
+  option (gen_bq_schema.bigquery_opts).table_name = "liasettings";
+
+  optional LiaSettings settings = 1;
+
+  repeated LiaSettings children = 2;
+}
+
 message Product {
   optional string id = 1;
 
@@ -216,21 +224,25 @@ message Product {
 
   repeated ProductCertification certifications = 129;
 }
+
 message Price {
   optional string value = 1;
 
   optional string currency = 2;
 }
+
 message ProductDimension {
   optional double value = 1;
 
   optional string unit = 2;
 }
+
 message ProductWeight {
   optional double value = 1;
 
   optional string unit = 2;
 }
+
 message ProductShipping {
   optional Price price = 1;
 
@@ -256,21 +268,25 @@ message ProductShipping {
 
   optional int64 max_transit_time = 11;
 }
+
 message ProductUnitPricingBaseMeasure {
   optional int64 value = 1;
 
   optional string unit = 2;
 }
+
 message ProductUnitPricingMeasure {
   optional double value = 1;
 
   optional string unit = 2;
 }
+
 message ProductShippingWeight {
   optional double value = 1;
 
   optional string unit = 2;
 }
+
 message ProductTax {
   optional double rate = 1;
 
@@ -284,6 +300,7 @@ message ProductTax {
 
   optional string postal_code = 6;
 }
+
 message CustomAttribute {
   optional string name = 1;
 
@@ -291,11 +308,13 @@ message CustomAttribute {
 
   repeated CustomAttribute group_values = 5;
 }
+
 message Installment {
   optional int64 months = 1;
 
   optional Price amount = 2;
 }
+
 message LoyaltyPoints {
   optional string name = 1;
 
@@ -309,6 +328,7 @@ message ProductShippingDimension {
 
   optional string unit = 2;
 }
+
 message ProductProductDetail {
   optional string section_name = 1;
 
@@ -324,6 +344,7 @@ message ProductSubscriptionCost {
 
   optional Price amount = 3;
 }
+
 message CloudExportAdditionalProperties {
   optional string property_name = 1;
 
@@ -349,6 +370,7 @@ message ProductCertification {
 
   optional string certification_code = 3;
 }
+
 message ProductStatus {
   optional string product_id = 1;
 
@@ -368,6 +390,7 @@ message ProductStatus {
 
   repeated ProductStatusItemLevelIssue item_level_issues = 10;
 }
+
 message ProductStatusDestinationStatus {
   optional string destination = 1;
 
@@ -379,6 +402,7 @@ message ProductStatusDestinationStatus {
 
   repeated string disapproved_countries = 8;
 }
+
 message ProductStatusItemLevelIssue {
   optional string code = 1;
 
@@ -397,4 +421,66 @@ message ProductStatusItemLevelIssue {
   optional string documentation = 8;
 
   repeated string applicable_countries = 9;
+}
+
+message LiaSettings {
+  optional uint64 account_id = 1;
+
+  repeated LiaCountrySettings country_settings = 2;
+
+  optional string kind = 3;
+}
+
+message LiaCountrySettings {
+  optional string country = 1;
+
+  optional LiaInventorySettings inventory = 2;
+
+  optional LiaOnDisplayToOrderSettings on_display_to_order = 3;
+
+  optional bool hosted_local_storefront_active = 5;
+
+  optional bool store_pickup_active = 6;
+
+  optional LiaAboutPageSettings about = 7;
+
+  optional LiaPosDataProvider pos_data_provider = 8;
+
+  optional LiaOmnichannelExperience omnichannel_experience = 9;
+}
+
+message LiaPosDataProvider {
+  optional uint64 pos_data_provider_id = 1;
+
+  optional string pos_external_account_id = 2;
+}
+
+message LiaInventorySettings {
+  optional string status = 1;
+
+  optional string inventory_verification_contact_name = 2;
+
+  optional string inventory_verification_contact_email = 3;
+
+  optional string inventory_verification_contact_status = 4;
+}
+
+message LiaOnDisplayToOrderSettings {
+  optional string status = 1;
+
+  optional string shipping_cost_policy_url = 2;
+}
+
+message LiaAboutPageSettings {
+  optional string status = 1;
+
+  optional string url = 2;
+}
+
+message LiaOmnichannelExperience {
+  optional string country = 1;
+
+  optional string lsf_type = 2;
+
+  repeated string pickup_types = 3;
 }

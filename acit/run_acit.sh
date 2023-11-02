@@ -71,6 +71,7 @@ run_pipeline() {
   rm -rf "${SINKS_DIR}" && mkdir -p "${SINKS_DIR}"
   python -m acit.create_base_tables \
     --output="${SINKS_DIR}/wide_products_table.jsonlines" \
+    --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
     --source_dir="${SOURCES_DIR}" \
     -- \
     --runner=direct
@@ -84,7 +85,7 @@ upload_to_bq() {
   cat $(find "${SOURCES_DIR}" -type f | grep accounts) > "${BQ_DIR}/accounts.jsonlines"
   if [[ "${ADMIN}" = true ]]; then
     cat $(find "${SOURCES_DIR}" -type f | grep shippingsettings) > "${BQ_DIR}/shippingsettings.jsonlines"
-    cat $(find "${SOURCES_DIR}" -type f | grep liasettings) > "${BQ_DIR}/liasettings.jsonlines"
+    cat $(find "${SINKS_DIR}" -type f | grep liasettings) > "${BQ_DIR}/liasettings.jsonlines"
   fi
   cat $(find "${SOURCES_DIR}" -type f | grep performance) > "${BQ_DIR}/performance.jsonlines"
   cat $(find "${SOURCES_DIR}" -type f | grep language) > "${BQ_DIR}/language.jsonlines"
@@ -106,9 +107,10 @@ upload_to_bq() {
       "${BQ_DIR}/shippingsettings.jsonlines"
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings"
 
-    bq load $BQ_FLAGS \
+    bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.liasettings" \
-      "${BQ_DIR}/liasettings.jsonlines"
+      "${BQ_DIR}/liasettings.jsonlines" \
+      acit/schemas/acit/liasettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.liasettings"
   fi
 

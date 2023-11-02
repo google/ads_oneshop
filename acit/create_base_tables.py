@@ -51,6 +51,7 @@ flags.DEFINE_string(
 )
 flags.DEFINE_string('output', 'out.jsonlines', 'The file path to output to')
 
+flags.DEFINE_string('liasettings_output', 'liasettings.json', 'The Local Inventory Ads settings output file.')
 
 def _ReadGoogleAdsRows(description: str, path: str) -> beam.ParDo:
   """Simple textio wrapper, can be used to swap in Ads protos later."""
@@ -133,6 +134,7 @@ def main(argv):
         )
         | 'Products to JSON' >> beam.Map(json.loads)
     )
+
     product_statuses = (
         p
         | 'Read Product Statuses'
@@ -140,6 +142,34 @@ def main(argv):
             f'{source_dir}/*/merchant_center/*/productstatuses/*.jsonlines'
         )
         | 'Product Statuses to JSON' >> beam.Map(json.loads)
+    )
+
+    def convert_lia_settings(row):
+      msg = schema_pb2.CombinedLiaSettings()
+      # NOTE: this will drop "aggregator ID", but that shouldn't matter here because
+      #   if we are parsing children, the parent (which is the aggregator) will always
+      #   be present.
+      # TODO: remove later
+      # Have to delete metadata because the proto will either complain about missing fields,
+      #   or it won't use lower_snake_case.
+      for child in row.get('children', []):
+        del child['downloaderMetadata']
+      json_format.ParseDict(row, msg)
+      return json_format.MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
+
+
+    # Process LIA settings
+    _ = (
+        p
+        | 'Read LIA Settings'
+        >> textio.ReadFromText(
+            f'{source_dir}/*/merchant_center/*/liasettings/*.jsonlines'
+        )
+        | 'LIA Settings to JSON' >> beam.Map(json.loads)
+        | 'LIA Settings to table format' >> beam.Map(convert_lia_settings)
+        | 'LIA Settings back to JSON' >> beam.Map(json.dumps)
+        | 'Output LIA settings'
+        >> textio.WriteToText(flags.FLAGS.liasettings_output)
     )
 
     languages_by_campaign_id = (

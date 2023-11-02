@@ -341,7 +341,7 @@ def main(_):
         # This shippingsettings.list is failing. Use get below.
         continue
       logging.info('Fetching account-level resource %s...' % name)
-      for parent in resource_downloader.download_resources(
+      for response in resource_downloader.download_resources(
           client=merchant_api,
           resource_name=name,
           # Required to duplicate here
@@ -355,6 +355,7 @@ def main(_):
       ):
         children = []
         # This key will only be set on MCA account-level metrics
+        parent = {'settings': response}
         parent['children'] = children
 
         logging.info('Fetching subaccount resources %s...' % name)

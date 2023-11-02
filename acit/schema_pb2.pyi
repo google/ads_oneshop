@@ -26,6 +26,14 @@ class CloudExportAdditionalProperties(_message.Message):
     unit_code: str
     def __init__(self, property_name: _Optional[str] = ..., text_value: _Optional[_Iterable[str]] = ..., bool_value: bool = ..., int_value: _Optional[_Iterable[int]] = ..., float_value: _Optional[_Iterable[float]] = ..., min_value: _Optional[float] = ..., max_value: _Optional[float] = ..., unit_code: _Optional[str] = ...) -> None: ...
 
+class CombinedLiaSettings(_message.Message):
+    __slots__ = ["children", "settings"]
+    CHILDREN_FIELD_NUMBER: _ClassVar[int]
+    SETTINGS_FIELD_NUMBER: _ClassVar[int]
+    children: _containers.RepeatedCompositeFieldContainer[LiaSettings]
+    settings: LiaSettings
+    def __init__(self, settings: _Optional[_Union[LiaSettings, _Mapping]] = ..., children: _Optional[_Iterable[_Union[LiaSettings, _Mapping]]] = ...) -> None: ...
+
 class CustomAttribute(_message.Message):
     __slots__ = ["group_values", "name", "value"]
     GROUP_VALUES_FIELD_NUMBER: _ClassVar[int]
@@ -43,6 +51,82 @@ class Installment(_message.Message):
     amount: Price
     months: int
     def __init__(self, months: _Optional[int] = ..., amount: _Optional[_Union[Price, _Mapping]] = ...) -> None: ...
+
+class LiaAboutPageSettings(_message.Message):
+    __slots__ = ["status", "url"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    URL_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    url: str
+    def __init__(self, status: _Optional[str] = ..., url: _Optional[str] = ...) -> None: ...
+
+class LiaCountrySettings(_message.Message):
+    __slots__ = ["about", "country", "hosted_local_storefront_active", "inventory", "omnichannel_experience", "on_display_to_order", "pos_data_provider", "store_pickup_active"]
+    ABOUT_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_FIELD_NUMBER: _ClassVar[int]
+    HOSTED_LOCAL_STOREFRONT_ACTIVE_FIELD_NUMBER: _ClassVar[int]
+    INVENTORY_FIELD_NUMBER: _ClassVar[int]
+    OMNICHANNEL_EXPERIENCE_FIELD_NUMBER: _ClassVar[int]
+    ON_DISPLAY_TO_ORDER_FIELD_NUMBER: _ClassVar[int]
+    POS_DATA_PROVIDER_FIELD_NUMBER: _ClassVar[int]
+    STORE_PICKUP_ACTIVE_FIELD_NUMBER: _ClassVar[int]
+    about: LiaAboutPageSettings
+    country: str
+    hosted_local_storefront_active: bool
+    inventory: LiaInventorySettings
+    omnichannel_experience: LiaOmnichannelExperience
+    on_display_to_order: LiaOnDisplayToOrderSettings
+    pos_data_provider: LiaPosDataProvider
+    store_pickup_active: bool
+    def __init__(self, country: _Optional[str] = ..., inventory: _Optional[_Union[LiaInventorySettings, _Mapping]] = ..., on_display_to_order: _Optional[_Union[LiaOnDisplayToOrderSettings, _Mapping]] = ..., hosted_local_storefront_active: bool = ..., store_pickup_active: bool = ..., about: _Optional[_Union[LiaAboutPageSettings, _Mapping]] = ..., pos_data_provider: _Optional[_Union[LiaPosDataProvider, _Mapping]] = ..., omnichannel_experience: _Optional[_Union[LiaOmnichannelExperience, _Mapping]] = ...) -> None: ...
+
+class LiaInventorySettings(_message.Message):
+    __slots__ = ["inventory_verification_contact_email", "inventory_verification_contact_name", "inventory_verification_contact_status", "status"]
+    INVENTORY_VERIFICATION_CONTACT_EMAIL_FIELD_NUMBER: _ClassVar[int]
+    INVENTORY_VERIFICATION_CONTACT_NAME_FIELD_NUMBER: _ClassVar[int]
+    INVENTORY_VERIFICATION_CONTACT_STATUS_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    inventory_verification_contact_email: str
+    inventory_verification_contact_name: str
+    inventory_verification_contact_status: str
+    status: str
+    def __init__(self, status: _Optional[str] = ..., inventory_verification_contact_name: _Optional[str] = ..., inventory_verification_contact_email: _Optional[str] = ..., inventory_verification_contact_status: _Optional[str] = ...) -> None: ...
+
+class LiaOmnichannelExperience(_message.Message):
+    __slots__ = ["country", "lsf_type", "pickup_types"]
+    COUNTRY_FIELD_NUMBER: _ClassVar[int]
+    LSF_TYPE_FIELD_NUMBER: _ClassVar[int]
+    PICKUP_TYPES_FIELD_NUMBER: _ClassVar[int]
+    country: str
+    lsf_type: str
+    pickup_types: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, country: _Optional[str] = ..., lsf_type: _Optional[str] = ..., pickup_types: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class LiaOnDisplayToOrderSettings(_message.Message):
+    __slots__ = ["shipping_cost_policy_url", "status"]
+    SHIPPING_COST_POLICY_URL_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    shipping_cost_policy_url: str
+    status: str
+    def __init__(self, status: _Optional[str] = ..., shipping_cost_policy_url: _Optional[str] = ...) -> None: ...
+
+class LiaPosDataProvider(_message.Message):
+    __slots__ = ["pos_data_provider_id", "pos_external_account_id"]
+    POS_DATA_PROVIDER_ID_FIELD_NUMBER: _ClassVar[int]
+    POS_EXTERNAL_ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    pos_data_provider_id: int
+    pos_external_account_id: str
+    def __init__(self, pos_data_provider_id: _Optional[int] = ..., pos_external_account_id: _Optional[str] = ...) -> None: ...
+
+class LiaSettings(_message.Message):
+    __slots__ = ["account_id", "country_settings", "kind"]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_SETTINGS_FIELD_NUMBER: _ClassVar[int]
+    KIND_FIELD_NUMBER: _ClassVar[int]
+    account_id: int
+    country_settings: _containers.RepeatedCompositeFieldContainer[LiaCountrySettings]
+    kind: str
+    def __init__(self, account_id: _Optional[int] = ..., country_settings: _Optional[_Iterable[_Union[LiaCountrySettings, _Mapping]]] = ..., kind: _Optional[str] = ...) -> None: ...
 
 class LoyaltyPoints(_message.Message):
     __slots__ = ["name", "points_value", "ratio"]

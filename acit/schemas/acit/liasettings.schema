@@ -1,0 +1,280 @@
+[
+ {
+  "name": "settings",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "account_id",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "country_settings",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "country",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "inventory",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_name",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_email",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "on_display_to_order",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "shipping_cost_policy_url",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "hosted_local_storefront_active",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "store_pickup_active",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "about",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "url",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "pos_data_provider",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "pos_data_provider_id",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "pos_external_account_id",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "omnichannel_experience",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "country",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "lsf_type",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "pickup_types",
+        "type": "STRING",
+        "mode": "REPEATED"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "kind",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ },
+ {
+  "name": "children",
+  "type": "RECORD",
+  "mode": "REPEATED",
+  "fields": [
+   {
+    "name": "account_id",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "country_settings",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+     {
+      "name": "country",
+      "type": "STRING",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "inventory",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_name",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_email",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "inventory_verification_contact_status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "on_display_to_order",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "shipping_cost_policy_url",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "hosted_local_storefront_active",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "store_pickup_active",
+      "type": "BOOLEAN",
+      "mode": "NULLABLE"
+     },
+     {
+      "name": "about",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "status",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "url",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "pos_data_provider",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "pos_data_provider_id",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "pos_external_account_id",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       }
+      ]
+     },
+     {
+      "name": "omnichannel_experience",
+      "type": "RECORD",
+      "mode": "NULLABLE",
+      "fields": [
+       {
+        "name": "country",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "lsf_type",
+        "type": "STRING",
+        "mode": "NULLABLE"
+       },
+       {
+        "name": "pickup_types",
+        "type": "STRING",
+        "mode": "REPEATED"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "kind",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ }
+]
