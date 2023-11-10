@@ -8,3 +8,4 @@ google-cloud-storage
 six
 absl-py
 apache-beam
+pyarrow-hotfix
