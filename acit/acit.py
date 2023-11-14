@@ -91,7 +91,7 @@ SELECT
   metrics.conversions_value
 FROM shopping_performance_view
 WHERE
-  segments.date DURING LAST_7_DAYS
+  segments.date DURING LAST_30_DAYS
 """
 
 # WIP: need to query for each campaign type
