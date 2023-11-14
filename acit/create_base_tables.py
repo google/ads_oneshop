@@ -45,6 +45,9 @@ from apache_beam.io import textio
 from apache_beam.options import pipeline_options
 from apache_beam import pvalue
 
+# TODO(https://github.com/apache/beam/issues/29392): Remove after Beam 2.52.0 is released
+import pyarrow_hotfix
+
 # Omit variable declaration so we can pickle __main__.
 flags.DEFINE_string(
     'source_dir', '/tmp/acit', 'The root path for all source files.'
