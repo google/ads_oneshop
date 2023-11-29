@@ -148,16 +148,23 @@ def main(argv):
     )
 
     def convert_lia_settings(row):
-      msg = schema_pb2.CombinedLiaSettings()
+      lia_msg = schema_pb2.LiaSettings()
       # NOTE: this will drop "aggregator ID", but that shouldn't matter here because
       #   if we are parsing children, the parent (which is the aggregator) will always
       #   be present.
       # TODO: remove later
       # Have to delete metadata because the proto will either complain about missing fields,
       #   or it won't use lower_snake_case.
+      children = []
       for child in row.get('children', []):
         del child['downloaderMetadata']
-      json_format.ParseDict(row, msg)
+        child_msg = schema_pb2.LiaSettings()
+        json_format.ParseDict(child, child_msg)
+        children.append(child_msg)
+      del row['children']
+
+      json_format.ParseDict(row, lia_msg)
+      msg = schema_pb2.CombinedLiaSettings(settings=lia_msg, children=children)
       return json_format.MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
 
 

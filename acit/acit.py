@@ -263,6 +263,7 @@ def main(_):
   mc_path.mkdir(parents=True, exist_ok=True)
 
   # Download ads data
+  logging.info('Ads YAML: %s' % os.getenv("GOOGLE_ADS_CONFIGURATION_FILE_PATH", "Not set"))
   logging.info('Loading Ads data...')
   # Only load constants once
   constants_gaql = iter([query for query in _ALL_GAQL if query[2] == gaql.QueryMode.SINGLE])
