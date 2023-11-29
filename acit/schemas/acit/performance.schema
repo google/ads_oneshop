@@ -1,0 +1,112 @@
+[
+ {
+  "name": "customer",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "id",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "resourceName",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ },
+ {
+  "name": "campaign",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "id",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "resourceName",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ },
+ {
+  "name": "segments",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "productMerchantId",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "productChannel",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "productLanguage",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "productFeedLabel",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "productItemId",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ },
+ {
+  "name": "metrics",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "impressions",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "clicks",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "costMicros",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "conversions",
+    "type": "NUMERIC",
+    "mode": "NULLABLE"
+   },
+   {
+    "name": "conversionsValue",
+    "type": "BIGNUMERIC",
+    "mode": "NULLABLE"
+   }
+  ]
+ },
+ {
+  "name": "shoppingPerformanceView",
+  "type": "RECORD",
+  "mode": "NULLABLE",
+  "fields": [
+   {
+    "name": "resourceName",
+    "type": "STRING",
+    "mode": "NULLABLE"
+   }
+  ]
+ }
+]

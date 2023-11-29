@@ -114,9 +114,10 @@ upload_to_bq() {
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.liasettings"
   fi
 
-  bq load $BQ_FLAGS \
+  bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.performance" \
-    "${BQ_DIR}/performance.jsonlines"
+    "${BQ_DIR}/performance.jsonlines" \
+    acit/schemas/acit/performance.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.performance"
 
   bq load $BQ_FLAGS \
