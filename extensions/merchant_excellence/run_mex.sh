@@ -2,6 +2,11 @@
 
 set -e
 
+if [[ -z "$REGION" ]]; then
+    echo '$REGION is required.' 1>&2
+    exit 1
+fi
+
 create_views() {
   BQ_FLAGS_BASE="--location=${DATASET_LOCATION} --nouse_legacy_sql"
   CURRENT_DATE="$(date '+%Y%M%d')"

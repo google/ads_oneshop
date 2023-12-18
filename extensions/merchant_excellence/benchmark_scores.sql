@@ -9,7 +9,7 @@ WITH
     FROM ${PROJECT_NAME}.${DATASET_NAME}.MEX_benchmark_region AS R
     INNER JOIN ${PROJECT_NAME}.${DATASET_NAME}.MEX_benchmark_details AS D
       ON R.metric_name = D.metric_name
-    WHERE R.region_name = 'EMEA'
+    WHERE R.region_name = '${REGION}'
     GROUP BY 1, 3
     UNION ALL
     SELECT
@@ -20,7 +20,7 @@ WITH
     INNER JOIN ${PROJECT_NAME}.${DATASET_NAME}.MEX_benchmark_details AS D
       ON R.metric_name = D.metric_name
     WHERE
-      R.region_name = 'EMEA'
+      R.region_name = '${REGION}'
       AND NOT D.lia_metric
     GROUP BY 1, 3
   )
