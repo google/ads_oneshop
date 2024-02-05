@@ -5,6 +5,15 @@ CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_List
     partition_expiration_days = 60)
 AS
 WITH
+  AccountNames AS (
+    SELECT DISTINCT
+      C.id AS merchant_id,
+      C.name AS merchant_name,
+      A.settings.id AS aggregator_id,
+      A.settings.name AS aggregator_name,
+      CONCAT(C.name, ' (', C.id, ')') AS merchant_name_with_id
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A, A.children AS C
+  ),
   Account AS (
     SELECT DISTINCT
       C.id AS merchant_id,
@@ -599,29 +608,34 @@ WITH
   )
 SELECT
   CURRENT_DATE() AS extraction_date,
-  CAST(merchant_id AS STRING) AS merchant_id,
+  CAST(P.merchant_id AS STRING) AS merchant_id,
+  AN.merchant_name,
   CAST(P.aggregator_id AS STRING) AS aggregator_id,
-  channel,
-  item_id,
-  targeted_country,
-  language,
-  title,
-  product_type_lvl1,
-  product_type_lvl2,
-  product_type_lvl3,
-  custom_label_0,
-  custom_label_1,
-  custom_label_2,
-  custom_label_3,
-  custom_label_4,
-  brand,
-  metric_name,
-  data_quality_flag
+  AN.aggregator_name,
+  AN.merchant_name_with_id,
+  P.channel,
+  P.item_id,
+  P.targeted_country,
+  P.language,
+  P.title,
+  P.product_type_lvl1,
+  P.product_type_lvl2,
+  P.product_type_lvl3,
+  P.custom_label_0,
+  P.custom_label_1,
+  P.custom_label_2,
+  P.custom_label_3,
+  P.custom_label_4,
+  P.brand,
+  AM.metric_name,
+  AM.data_quality_flag
 FROM Products AS P
-INNER JOIN AllMetrics
+INNER JOIN AllMetrics AS AM
   USING (
     merchant_id,
     channel,
     item_id,
     targeted_country,
-    language);
+    language)
+LEFT JOIN AccountNames AS AN
+  USING (merchant_id);
