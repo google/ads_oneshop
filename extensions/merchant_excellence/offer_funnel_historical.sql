@@ -1,8 +1,17 @@
-SELECT extraction_date,
+-- Appends current data to the historical Offer Funnel table
+--
+-- @param ${PROJECT_NAME} Name of the project in BigQuery
+-- @param ${DATASET_NAME} Name of the dataset within the project in BigQuery
+
+SELECT
+  extraction_date,
   merchant_id,
+  merchant_name,
   aggregator_id,
+  aggregator_name,
+  merchant_name_with_id,
   channel,
-  targeted_countr,
+  targeted_country,
   product_type_lvl1,
   product_type_lvl2,
   product_type_lvl3,
@@ -18,4 +27,4 @@ SELECT extraction_date,
   targeted_offers,
   impression_offers,
   clicked_offers
-FROM ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_Funnel
+FROM ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_Funnel;

@@ -1,3 +1,8 @@
+-- Lists all the account level issues and metrics
+--
+-- @param ${PROJECT_NAME} Name of the project in BigQuery
+-- @param ${DATASET_NAME} Name of the dataset within the project in BigQuery
+
 CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_Account_List
   PARTITION BY
     extraction_date
@@ -13,7 +18,7 @@ WITH
         FROM C.country_settings
         WHERE
           inventory.status = 'active'
-          AND inventory.inventory_verification_contact_name = 'active'
+          AND inventory.inventory_verification_contact_status = 'active'
           AND about.status = 'active'
       ) AS lia_has_lia_implemented,
       EXISTS(
@@ -62,10 +67,21 @@ WITH
       ${PROJECT_NAME}.${DATASET_NAME}.products AS P,
       P.status.destination_statuses AS DS
   ),
+  AccountNames AS (
+    SELECT DISTINCT
+      C.id AS merchant_id,
+      C.name AS merchant_name,
+      A.settings.id AS aggregator_id,
+      A.settings.name AS aggregator_name,
+      CONCAT(C.name, ' (', C.id, ')') AS merchant_name_with_id
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A, A.children AS C
+  ),
   Account AS (
     SELECT DISTINCT
       C.id AS merchant_id,
+      C.name AS merchant_name,
       A.settings.id AS aggregator_id,
+      A.settings.name AS aggregator_name,
       IFNULL(
         C.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements,
         A.settings.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements)
@@ -196,9 +212,14 @@ WITH
     SELECT * FROM OnDisplayToOrderImplemented
   )
 SELECT DISTINCT
-  CURRENT_DATE() AS extraction_date,
-  CAST(merchant_id AS STRING) AS merchant_id,
-  CAST(aggregator_id AS STRING) AS aggregator_id,
+  CURRENT_DATE('UTC') AS extraction_date,
+  CAST(AM.merchant_id AS STRING) AS merchant_id,
+  AN.merchant_name,
+  CAST(AM.aggregator_id AS STRING) AS aggregator_id,
+  AN.aggregator_name,
+  AN.merchant_name_with_id,
   metric_name,
   data_quality_flag
-FROM AllMetrics;
+FROM AllMetrics AS AM
+LEFT JOIN AccountNames AS AN
+  USING (merchant_id);
