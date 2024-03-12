@@ -1,7 +1,3 @@
--- Calculates the final Merchant Excellence Score for both LIA and non-LIA metrics
---
--- @param ${PROJECT_NAME} Name of the project in BigQuery
--- @param ${DATASET_NAME} Name of the dataset within the project in BigQuery
 
 CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_benchmark_scores
 AS (

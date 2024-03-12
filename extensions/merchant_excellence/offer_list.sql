@@ -167,7 +167,7 @@ WITH
         AND P.offer_id = PSC.product_id
     LEFT JOIN AdsStats AS AD
       ON
-        AD.merchant_id = CAST(PSC.merchant_id AS INT64)
+       CAST(AD.merchant_id AS INT64) = CAST(PSC.merchant_id AS INT64)
         AND LOWER(AD.product_id) = LOWER(PSC.product_id)
     LEFT JOIN Account AS AC
       ON AC.merchant_id = PSC.merchant_id

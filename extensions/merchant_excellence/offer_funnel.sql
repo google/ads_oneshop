@@ -1,8 +1,3 @@
--- Calculates the offer funnel (offer lifecycle) as stores it in a table
---
--- @param ${PROJECT_NAME} Name of the project in BigQuery
--- @param ${DATASET_NAME} Name of the dataset within the project in BigQuery
-
 CREATE TABLE IF NOT EXISTS ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_Funnel_historical
   (
     extraction_date DATE,
@@ -36,7 +31,7 @@ CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_Funnel
   PARTITION BY
     extraction_date
   OPTIONS (
-    partition_expiration_days = 60)
+    partition_expiration_days = 90)
 AS (
   WITH
     AccountNames AS (
@@ -61,11 +56,11 @@ AS (
         P.segments.productMerchantId AS merchant_id,
         CONCAT(
           LOWER(P.segments.productChannel),
-          ':',
+          ":",
           L.languageConstant.code,
-          ':',
+          ":",
           P.segments.productFeedLabel,
-          ':',
+          ":",
           P.segments.productItemId) AS product_id,
         SUM(P.metrics.impressions) AS impressions_last30days,
         SUM(P.metrics.clicks) AS clicks_last30days
@@ -183,13 +178,13 @@ AS (
           AND P.offer_id = PSC.product_id
       LEFT JOIN AdsStats AS AD
         ON
-          AD.merchant_id = CAST(PSC.merchant_id AS INT64)
+         CAST(AD.merchant_id AS INT64) = CAST(PSC.merchant_id AS INT64)
           AND LOWER(AD.product_id) = LOWER(PSC.product_id)
       LEFT JOIN Account AS AC
         ON AC.merchant_id = PSC.merchant_id
     )
   SELECT
-    CURRENT_DATE('UTC') AS extraction_date,
+    CURRENT_DATE() AS extraction_date,
     CAST(P.merchant_id AS STRING) AS merchant_id,
     AN.merchant_name,
     CAST(P.aggregator_id AS STRING) AS aggregator_id,
@@ -227,6 +222,8 @@ AS (
       AND P.had_impressions
       AND P.had_clicks) AS clicked_offers
   FROM Products AS P
+  LEFT JOIN AccountNames AS AN
+    USING (merchant_id)
   GROUP BY
     extraction_date,
     P.merchant_id,

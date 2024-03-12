@@ -1,8 +1,3 @@
--- Appends current data to the historical All Metrics table
---
--- @param ${PROJECT_NAME} Name of the project in BigQuery
--- @param ${DATASET_NAME} Name of the dataset within the project in BigQuery
-
 SELECT
   extraction_date,
   merchant_id,
