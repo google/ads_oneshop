@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 
 
 def prepare_raw_data(
@@ -50,3 +51,31 @@ def prepare_raw_data(
     model_data[metric] = np.where((raw_data[metric] == 'TRUE'), 1, 0)
 
   return model_data
+
+
+def run_model(
+    model_data: pd.DataFrame,
+    dependent_var: str,
+    explanatory_var: list[str],
+) -> pd.DataFrame:
+  """Runs ols model and returns the results.
+
+  Args:
+    model_data: Dataframe for Merchant Excellence model that contains a
+      performance metric and MEX metrics.
+    dependent_var: Performance metric to be used in the model.
+    explanatory_var: MEX metrics to be used in the model.
+
+  Returns:
+    model_results: Dataframe that contains effects and p_values for each MEX
+      metric.
+  """
+
+  formula = f'{dependent_var}~{" + ".join(explanatory_var)}'
+  fit_model = smf.ols(formula=formula, data=model_data).fit()
+
+  model_results = pd.concat([fit_model.params, fit_model.pvalues], axis=1)
+  model_results.reset_index(inplace=True)
+  model_results.columns = ['mex_metric', 'effects', 'p_values']
+
+  return model_results

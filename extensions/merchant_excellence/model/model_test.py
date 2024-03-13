@@ -80,6 +80,47 @@ class TestModel(unittest.TestCase):
           raw_metrics=['impressions_30days', 'mex1', 'mex2', 'mex3']
       )
 
+  def test_run_model_correct(self):
+    input_data = pd.DataFrame(
+        data=[
+            ['shopping1', 0.06, 1, 0, 0],
+            ['shopping2', 0.07, 1, 0, 0],
+            ['shopping3', 0.08, 1, 0, 0],
+            ['shopping4', 0.09, 1, 0, 0],
+            ['shopping5', 0.04, 0, 1, 0],
+            ['shopping6', 0.03, 0, 1, 0],
+            ['shopping7', 0.02, 0, 1, 0],
+            ['shopping8', 0.01, 0, 0, 1],
+            ['shopping9', 0.01, 0, 0, 1],
+            ['shopping10', 0.00, 0, 0, 1],
+        ],
+        columns=['offer', 'ctr', 'mex1', 'mex2', 'mex3'],
+    )
+
+    expected_result = pd.DataFrame(
+        data=[
+            ['Intercept', 0.027917, 0.000010],
+            ['mex1', 0.047083, 0.000015],
+            ['mex2', 0.002083, 0.686624],
+            ['mex3', -0.021250, 0.00360],
+        ],
+        columns=[
+            'mex_metric',
+            'effects',
+            'p_values',
+        ],
+    )
+
+    result = model.run_model(
+        model_data=input_data,
+        dependent_var='ctr',
+        explanatory_var=['mex1', 'mex2', 'mex3'],
+    )
+
+    pd.testing.assert_frame_equal(
+        result, expected_result, atol=0.5e-1, rtol=0.5e-1
+    )
+
 
 if __name__ == "__main__":
     unittest.main()
