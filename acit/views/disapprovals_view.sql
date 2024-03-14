@@ -1,3 +1,8 @@
+-- Create the product disapprovals view
+--
+-- @param ${PROJECT_NAME} The GCP project name
+-- @param ${DATASET_NAME} The BQ dataset name
+
 CREATE OR REPLACE VIEW ${PROJECT_NAME}.${DATASET_NAME}.disapprovals AS
 SELECT
   P.account_id,

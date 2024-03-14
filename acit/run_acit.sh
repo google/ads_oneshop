@@ -134,8 +134,8 @@ upload_to_bq() {
 
 create_views() {
   BQ_FLAGS_BASE="--location=${DATASET_LOCATION} --nouse_legacy_sql"
-  bq query $BQ_FLAGS_BASE "$(envsubst < acit/views/main_view.sql)"
-  bq query $BQ_FLAGS_BASE "$(envsubst < acit/views/disapprovals_view.sql)"
+  bq query $BQ_FLAGS_BASE < <(envsubst < acit/views/main_view.sql)
+  bq query $BQ_FLAGS_BASE < <(envsubst < acit/views/disapprovals_view.sql)
 }
 
 pull_data

@@ -1,3 +1,8 @@
+-- Create the main ACIT view
+--
+-- @param ${PROJECT_NAME} The GCP project name
+-- @param ${DATASET_NAME} The BQ dataset name
+
 CREATE OR REPLACE VIEW ${PROJECT_NAME}.${DATASET_NAME}.acit AS
 WITH
   Products AS (
