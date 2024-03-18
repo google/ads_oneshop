@@ -79,3 +79,43 @@ def run_model(
   model_results.columns = ['mex_metric', 'effects', 'p_values']
 
   return model_results
+
+
+def format_model_results(
+    model_results: pd.DataFrame,
+    significant_threshold: float = 0.10
+) -> pd.DataFrame:
+  """Formats the model results and applies a priority layer.
+
+  Args:
+    model_results: Dataframe for model results that contains effects and
+      p_values.
+    significant_threshold: Threshold for statistical significance.
+
+  Returns:
+    model_output: Dataframe that contains priority level for each MEX metric.
+  """
+
+  model_results = model_results.drop(
+      model_results[model_results['mex_metric'] == 'Intercept'].index
+  )
+  model_results['significant'] = np.where(
+      model_results['p_values'] <= significant_threshold, True, False
+  )
+  model_results['effects_guardrail'] = np.where(
+      model_results['significant'], model_results['effects'], 0
+  )
+
+  # priority mapping layer
+  priority_layer = pd.qcut(
+      model_results['effects_guardrail'],
+      q=[0, 0.25, 0.75, 1],
+      labels=['Low', 'Medium', 'High'],
+  )
+  priority_layer.name = 'priority'
+
+  model_output = pd.concat([model_results, priority_layer], axis=1).reset_index(
+      drop=True
+  )
+
+  return model_output

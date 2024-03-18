@@ -121,6 +121,53 @@ class TestModel(unittest.TestCase):
         result, expected_result, atol=0.5e-1, rtol=0.5e-1
     )
 
+  def test_format_model_results_correct(self):
+    input_data = pd.DataFrame(
+        data=[
+            ['Intercept', 0.01, 0.001],
+            ['mex1', 0.05, 0.0001],
+            ['mex2', 0.01, 0.10],
+            ['mex3', -1, 0.50],
+            ['mex4', 0.025, 0.0001],
+            ['mex5', -0.5, 0.10],
+        ],
+        columns=[
+            'mex_metric',
+            'effects',
+            'p_values',
+        ],
+    )
+
+    expected_result = pd.DataFrame(
+        data=[
+            ['mex1', 0.05, 0.0001, True, 0.05, 'High'],
+            ['mex2', 0.01, 0.10, True, 0.01, 'Medium'],
+            ['mex3', -1, 0.50, False, 0.0, 'Low'],
+            ['mex4', 0.025, 0.0001, True, 0.025, 'Medium'],
+            ['mex5', -0.5, 0.10, True, -0.5, 'Low'],
+        ],
+        columns=[
+            'mex_metric',
+            'effects',
+            'p_values',
+            'significant',
+            'effects_guardrail',
+            'priority'
+        ],
+    )
+    expected_result['priority'] = pd.Categorical(
+        expected_result['priority'],
+        ordered=True,
+        categories=['Low', 'Medium', 'High']
+    )
+
+    result = model.format_model_results(
+        model_results=input_data,
+        significant_threshold=0.10
+    )
+
+    pd.testing.assert_frame_equal(result, expected_result)
+
 
 if __name__ == "__main__":
     unittest.main()
