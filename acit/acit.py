@@ -445,8 +445,8 @@ def main(_):
         for result in resource_downloader.download_resources(
             client=merchant_api,
             resource_name=resource,
-            # Yes, this is inconsistent with the rest of the API.
-            params={'merchantId': account_id},
+            # Yes, 'merchantId' is inconsistent with the rest of the API.
+            params={'merchantId': account_id, 'maxResults': 250},
             parent_resource='',
             parent_params={},
             resource_method='list',
