@@ -41,6 +41,7 @@ from acit import schema_pb2
 from google.protobuf import json_format
 
 import apache_beam as beam
+from apache_beam import pipeline
 from apache_beam.io import textio
 from apache_beam.options import pipeline_options
 from apache_beam import pvalue
@@ -63,6 +64,43 @@ def _ReadGoogleAdsRows(description: str, path: str) -> beam.ParDo:
   ) | f'{description} to Google Ads Row' >> beam.Map(json.loads)
 
 
+def combine_campaign_settings(
+    campaign_settings: pvalue.PCollection,
+    languages_by_campaign_id: pvalue.PCollection,
+    listing_scopes_by_campaign_id: pvalue.PCollection,
+) -> pvalue.PCollection:
+  """Creates a single record for each campaign with its targeted languages and listing scopes.
+
+  Args:
+    campaign_settings: The PCollection of all campaign settings.
+    languages_by_campaign_id: The PTable of campaign ID and language targeting information.
+    listing_scopes_by_campaign_id: The PTable of campaign ID and (at most one) root listing scope.
+
+  Returns:
+    A combined campaign settings PCollection.
+  """
+  # TODO: https://github.com/apache/beam/issues/20825 - Remove pyright ignore annotation.
+  return (  # pyright: ignore [reportReturnType]
+      {
+          'campaigns': campaign_settings
+          | beam.Map(lambda c: (c['campaign']['id'], c)),
+          'languages': languages_by_campaign_id,
+          'inventory_filter_dimensions': listing_scopes_by_campaign_id,
+      }
+      | beam.CoGroupByKey()
+      | beam.Filter(lambda kv: len(kv[1]['campaigns']) > 0)
+      | beam.FlatMapTuple(
+          lambda _, v: product.build_campaign(
+              # Must only be one
+              v['campaigns'][0],
+              # Array
+              v['languages'],
+              # At-most one
+              next(iter(v['inventory_filter_dimensions']), []),
+          )
+      )
+  )
+
 # Flags after `--` can get passed directly to Beam
 def main(argv):
   opts = pipeline_options.PipelineOptions(argv[1:])
@@ -70,7 +108,7 @@ def main(argv):
 
   source_dir = flags.FLAGS.source_dir
 
-  with beam.Pipeline(options=opts) as p:
+  with pipeline.Pipeline(options=opts) as p:
     # Ads Data
     asset_group_listing_filters = (
         p
@@ -215,24 +253,11 @@ def main(argv):
         )
     )
 
-    campaigns = (
-        {
-            'campaigns': campaign_settings
-            | beam.Map(lambda c: (c['campaign']['id'], c)),
-            'languages': languages_by_campaign_id,
-            'inventory_filter_dimensions': listing_scopes_by_campaign_id,
-        }
-        | beam.CoGroupByKey()
-        | beam.FlatMapTuple(
-            lambda _, v: product.build_campaign(
-                # Must only be one
-                v['campaigns'][0],
-                # Array
-                v['languages'],
-                # At-most one
-                next(iter(v['inventory_filter_dimensions']), []),
-            )
-        )
+
+    campaigns = combine_campaign_settings(
+        campaign_settings,
+        languages_by_campaign_id,
+        listing_scopes_by_campaign_id
     )
 
     shopping_campaigns_by_merchant_id = (

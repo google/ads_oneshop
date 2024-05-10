@@ -11,3 +11,4 @@ acit/config/content/*
 coverage.xml
 *.jsonlines
 __pycache__/
+**~
