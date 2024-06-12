@@ -55,7 +55,12 @@ flags.DEFINE_string(
 )
 flags.DEFINE_string('output', 'out.jsonlines', 'The file path to output to')
 
-flags.DEFINE_string('liasettings_output', 'liasettings.json', 'The Local Inventory Ads settings output file.')
+flags.DEFINE_string(
+    'liasettings_output',
+    'liasettings.json',
+    'The Local Inventory Ads settings output file.',
+)
+
 
 def _ReadGoogleAdsRows(description: str, path: str) -> beam.ParDo:
   """Simple textio wrapper, can be used to swap in Ads protos later."""
@@ -100,6 +105,7 @@ def combine_campaign_settings(
           )
       )
   )
+
 
 # Flags after `--` can get passed directly to Beam
 def main(argv):
@@ -207,8 +213,11 @@ def main(argv):
         msg = schema_pb2.CombinedLiaSettings()
         json_format.ParseDict(row, msg)
 
-      return json_format.MessageToDict(msg, preserving_proto_field_name=True, including_default_value_fields=True)
-
+      return json_format.MessageToDict(
+          msg,
+          preserving_proto_field_name=True,
+          including_default_value_fields=True,
+      )
 
     # Process LIA settings
     _ = (
@@ -253,11 +262,10 @@ def main(argv):
         )
     )
 
-
     campaigns = combine_campaign_settings(
         campaign_settings,
         languages_by_campaign_id,
-        listing_scopes_by_campaign_id
+        listing_scopes_by_campaign_id,
     )
 
     shopping_campaigns_by_merchant_id = (

@@ -21,11 +21,12 @@ from apache_beam.testing import util
 from acit import product
 from acit import create_base_tables
 
+
 class CreateBaseTablesTest(absltest.TestCase):
 
   def test_combine_campaign_settings_works(self):
     self._combine_campaign_settings_test(
-        campaigns = [{
+        campaigns=[{
             'customer': {'id': '123'},
             'campaign': {
                 'id': '123',
@@ -33,11 +34,11 @@ class CreateBaseTablesTest(absltest.TestCase):
                     'merchantId': '456',
                 },
                 'advertisingChannelType': 'something',
-            }
+            },
         }],
-        languages = [('123', {'language': 'English', 'is_targeted': True})],
-        listing_scopes = [('123', [])],
-        expected = [{
+        languages=[('123', {'language': 'English', 'is_targeted': True})],
+        listing_scopes=[('123', [])],
+        expected=[{
             'customer_id': '123',
             'campaign_id': '123',
             'merchant_id': '456',
@@ -47,30 +48,39 @@ class CreateBaseTablesTest(absltest.TestCase):
             'feed_label': '',
             'inventory_filter_dimensions': [],
             'sales_country': '',
-        }]
+        }],
     )
 
   def test_criteria_without_campaigns_race_condition(self):
     self._combine_campaign_settings_test(
-        campaigns = [],
-        languages = [('123', {'language': 'English', 'is_targeted': True})],
-        listing_scopes = [('123', [])],
-        expected = [],
+        campaigns=[],
+        languages=[('123', {'language': 'English', 'is_targeted': True})],
+        listing_scopes=[('123', [])],
+        expected=[],
     )
 
-  def _combine_campaign_settings_test(self, campaigns, languages, listing_scopes, expected):
+  def _combine_campaign_settings_test(
+      self, campaigns, languages, listing_scopes, expected
+  ):
     with test_pipeline.TestPipeline() as p:
-      campaign_settings = p | "Create campaign settings" >> beam.Create(campaigns)
-      languages_by_campaign_id = p | "Create Languages" >> beam.Create(languages)
-      listing_scopes_by_campaign_id = p | "Create Listing Scopes" >> beam.Create(listing_scopes)
+      campaign_settings = p | 'Create campaign settings' >> beam.Create(
+          campaigns
+      )
+      languages_by_campaign_id = p | 'Create Languages' >> beam.Create(
+          languages
+      )
+      listing_scopes_by_campaign_id = (
+          p | 'Create Listing Scopes' >> beam.Create(listing_scopes)
+      )
 
       combined = create_base_tables.combine_campaign_settings(
           campaign_settings,
           languages_by_campaign_id,
-          listing_scopes_by_campaign_id
+          listing_scopes_by_campaign_id,
       )
 
       util.assert_that(combined, util.equal_to(expected))
+
 
 if __name__ == '__main__':
   absltest.main()

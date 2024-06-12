@@ -263,11 +263,18 @@ def main(_):
   mc_path.mkdir(parents=True, exist_ok=True)
 
   # Download ads data
-  logging.info('Ads YAML: %s' % os.getenv("GOOGLE_ADS_CONFIGURATION_FILE_PATH", "Not set"))
+  logging.info(
+      'Ads YAML: %s'
+      % os.getenv('GOOGLE_ADS_CONFIGURATION_FILE_PATH', 'Not set')
+  )
   logging.info('Loading Ads data...')
   # Only load constants once
-  constants_gaql = iter([query for query in _ALL_GAQL if query[2] == gaql.QueryMode.SINGLE])
-  accounts_gaql = [query for query in _ALL_GAQL if query[2] != gaql.QueryMode.SINGLE]
+  constants_gaql = iter(
+      [query for query in _ALL_GAQL if query[2] == gaql.QueryMode.SINGLE]
+  )
+  accounts_gaql = [
+      query for query in _ALL_GAQL if query[2] != gaql.QueryMode.SINGLE
+  ]
   for customer_id in _CUSTOMER_IDS.value:
     logging.info('Processing Customer ID %s' % customer_id)
     ads_client = client.GoogleAdsClient.load_from_storage(
@@ -275,7 +282,7 @@ def main(_):
     )
     ads_client.login_customer_id = customer_id
     # constants_gaql will be empty on subsequent invocations
-    for resource, query, mode in (accounts_gaql + [g for g in constants_gaql]):
+    for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
       logging.info('...pulling resource %s...' % resource)
       output_dir = os.path.join(acit_ads_output_dir, customer_id, resource)
       pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)

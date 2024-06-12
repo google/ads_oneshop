@@ -13,6 +13,7 @@ test: format
 format:
 	pyink \
 	  --pyink-indentation=2 \
+	  --exclude='_pb2' \
 	  --line-length=80 \
 	  --pyink-use-majority-quotes \
 	  acit/
