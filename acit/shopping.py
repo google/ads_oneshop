@@ -34,7 +34,6 @@ class Campaign(TypedDict):
   campaign_id: str
   merchant_center_id: str
   feed_label: str
-  sales_country: str
   enable_local: bool
   scope: CampaignInventoryFilter
   targeting: list[util.ProductTargetingTree]
@@ -111,7 +110,6 @@ def create_shopping_campaign(
     campaign_id: str = campaign['campaign']['id']
     shopping_settings = campaign['campaign'].get('shoppingSetting', {})
     merchant_id: str = shopping_settings.get('merchantId', '')
-    sales_country: str = shopping_settings.get('salesCountry', '')
     feed_label: str = shopping_settings.get('feedLabel', '')
     enable_local: bool = shopping_settings.get('enableLocal', False)
 
@@ -122,7 +120,6 @@ def create_shopping_campaign(
         campaign_id=campaign_id,
         merchant_center_id=merchant_id,
         feed_label=feed_label,
-        sales_country=sales_country,
         enable_local=enable_local,
         scope=scope,
         targeting=grouping['product_group_trees'],

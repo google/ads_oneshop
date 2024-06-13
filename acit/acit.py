@@ -40,7 +40,7 @@ if sys.version_info < (3, 9, 0):
   # Required for union operators
   raise RuntimeError('Python 3.9 or greater required.')
 
-ADS_API_VERSION = 'v14'
+ADS_API_VERSION = 'v17'
 
 
 _CUSTOMER_IDS = flags.DEFINE_multi_string(
@@ -71,6 +71,10 @@ _ADMIN_RIGHTS = flags.DEFINE_boolean(
     'Whether to run against Merchant Center with admin privileges.',
 )
 
+_VALIDATE_ONLY = flags.DEFINE_boolean(
+    'validate_only', False, 'Whether to validate GAQL queries only.'
+)
+
 # NOTE: Always add customer.id to a query for uniqueness.
 
 # NOTE: Merchant Center FK has the form of channel:language:feed_label:item_id
@@ -95,8 +99,7 @@ WHERE
 """
 
 # WIP: need to query for each campaign type
-# If neither feed label nor sales country are set, then
-#   shopping campaigns target all feeds from an account.
+# If feed label is not set, then shopping campaigns target all feeds from an account.
 # TODO: Check local result for PMax (default enabled)
 _GAQL_CAMPAIGN_SETTINGS = """
 SELECT
@@ -107,7 +110,6 @@ SELECT
   campaign.shopping_setting.enable_local,
   campaign.shopping_setting.feed_label,
   campaign.shopping_setting.merchant_id,
-  campaign.shopping_setting.sales_country,
   campaign.status,
   campaign.advertising_channel_type,
   campaign.advertising_channel_sub_type
@@ -186,13 +188,11 @@ WHERE
 
 _GAQL_PRODUCT_CATEGORIES = """
 SELECT
-  product_bidding_category_constant.id,
-  product_bidding_category_constant.localized_name
-FROM product_bidding_category_constant
+  product_category_constant.category_id,
+  product_category_constant.localizations
+FROM product_category_constant
 WHERE
-  product_bidding_category_constant.status = 'ACTIVE'
-  AND product_bidding_category_constant.language_code = 'en'
-  AND product_bidding_category_constant.country_code = 'US'
+  product_category_constant.state = 'ENABLED'
 """
 
 _ALL_GAQL = [
@@ -250,6 +250,20 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
 
 
 def main(_):
+  if _VALIDATE_ONLY.value:
+    ads_client = client.GoogleAdsClient.load_from_storage(
+        version=ADS_API_VERSION
+    )
+    customer_id = next(iter(_CUSTOMER_IDS.value))
+    ads_client.login_customer_id = customer_id
+    for resource, query, mode in _ALL_GAQL:
+      gaql.run_query(
+          query=query,
+          ads_client=ads_client,
+          customer_id=customer_id,
+          validate_only=True,
+      )
+    return
   now = datetime.datetime.today().isoformat()
 
   acit_output_dir = os.path.join(_OUTPUT_DIR.value, now)

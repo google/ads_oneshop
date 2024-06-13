@@ -47,7 +47,6 @@ class CreateBaseTablesTest(absltest.TestCase):
             'enable_local': False,
             'feed_label': '',
             'inventory_filter_dimensions': [],
-            'sales_country': '',
         }],
     )
 

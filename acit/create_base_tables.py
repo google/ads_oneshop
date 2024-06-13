@@ -150,8 +150,19 @@ def main(argv):
         | 'Create Category Mapping'
         >> beam.Map(
             lambda row: (
-                row['productBiddingCategoryConstant']['id'],
-                row['productBiddingCategoryConstant']['localizedName'],
+                row['productCategoryConstant']['categoryId'],
+                next(
+                    iter(
+                        [
+                            localization['value']
+                            for localization in row['productCategoryConstant'][
+                                'localizations'
+                            ]
+                            if localization['regionCode'] == 'US'
+                            and localization['languageCode'] == 'en'
+                        ]
+                    )
+                ),
             )
         )
     )

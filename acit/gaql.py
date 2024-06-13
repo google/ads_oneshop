@@ -34,6 +34,7 @@ from absl import logging
 from acit import ads
 
 from google.ads.googleads import client
+from google.ads.googleads.errors import GoogleAdsException
 from google.protobuf import json_format
 
 _LOGIN_CUSTOMER_ID = flags.DEFINE_string(
@@ -77,7 +78,6 @@ _ADS_API_VERSION = flags.DEFINE_string(
 )
 
 
-# TODO: Add flag for querying a single account
 class QueryMode(enum.Enum):
   LEAVES = 'leaves'
   MCCS = 'mccs'
@@ -164,9 +164,50 @@ def run_query(
     ads_client: client.GoogleAdsClient,
     customer_id: str,
     prefix: str = '',
-    output_dir='',
+    output_dir: str = '',
     query_mode: QueryMode = QueryMode.LEAVES,
-):
+    validate_only: bool = False,
+) -> None:
+  """Run a query against a Google Ads account tree and write jsonlines files.
+
+  Due to limitations of the GIL and Python's gRPC implementation, this procedure
+  creates an output file containing GoogleAdsRow JSON for each account queried,
+  unless `validate_only` is set.
+
+  Args:
+    query: The GAQL query to run.
+    ads_client: The Google Ads client to use.
+    customer_id: The customer ID to run the query against.
+    prefix: The filename prefix to add to each output file.
+    output_dir: The directory to output the results.
+    query_mode: The expansion behavior for this query.
+    validate_only: Whether to validate the query only.
+
+  Raises:
+    GoogleAdsException: If this query results in an error using `validate_only`.
+  """
+  if validate_only:
+    # TODO: change validation behavior depending on query mode.
+    # Grab just the first child
+    child = next(
+        iter(
+            ads.query(
+                customer_id=customer_id,
+                ads_client=ads_client,
+                query=get_children_query(),
+            )
+        )
+    )
+
+    # Force an exception if a query fails
+    _ = list(
+        ads.query(
+            customer_id=str(child.customer_client.id),
+            ads_client=ads_client,
+            query=query,
+        )
+    )
+    return
   try:
     with futures.ProcessPoolExecutor(
         mp_context=mp.get_context('spawn')

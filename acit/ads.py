@@ -13,8 +13,8 @@
 # limitations under the License.
 
 from typing import cast, Iterable
-from google.ads.googleads.v14.services.types import google_ads_service
-from google.ads.googleads.v14.services.services.google_ads_service import client as service
+from google.ads.googleads.v17.services.types import google_ads_service
+from google.ads.googleads.v17.services.services.google_ads_service import client as service
 from google.ads.googleads import client
 
 

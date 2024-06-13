@@ -45,7 +45,6 @@ class Campaign(TypedDict):
   campaign_id: str
   campaign_type: str
   merchant_id: str
-  sales_country: str
   feed_label: str
   enable_local: bool
   languages: list[TargetedLanguage]
@@ -65,7 +64,6 @@ def build_campaign(
             campaign_id=campaign['campaign']['id'],
             campaign_type=campaign['campaign']['advertisingChannelType'],
             merchant_id=shopping_settings['merchantId'],
-            sales_country=shopping_settings.get('salesCountry', ''),
             feed_label=shopping_settings.get('feedLabel', ''),
             enable_local=shopping_settings.get('enableLocal', False),
             languages=languages,
@@ -141,7 +139,7 @@ def taxonomy_matches_dimension(
 
 
 _WILDCARD_DIMENSION_PATHS = {
-    'productBiddingCategory': 'id',
+    'productCategory': 'categoryId',
     'productBrand': 'value',
     'productChannel': 'channel',
     'productChannelExclusivity': 'channelExclusivity',
@@ -166,9 +164,9 @@ def dimension_matches_product(
   if dimension_is_wildcard(dimension):
     return True
 
-  if 'productBiddingCategory' in dimension:
-    level = dimension['productBiddingCategory']['level']
-    id_ = dimension['productBiddingCategory']['id']
+  if 'productCategory' in dimension:
+    level = dimension['productCategory']['level']
+    id_ = dimension['productCategory']['categoryId']
 
     taxonomy_index = _PRODUCT_DIMENSION_LEVELS.index(level)
     taxonomy_tokens = product.get('googleProductCategory', '').split(' > ')
@@ -336,7 +334,7 @@ def campaign_matches_product_status(
   product = product_status['product']
   if campaign['merchant_id'] != product_status['accountId']:
     return False
-  campaign_label = (campaign['sales_country'] or campaign['feed_label']).lower()
+  campaign_label = campaign['feed_label'].lower()
   if campaign_label and campaign_label != product['feedLabel'].lower():
     return False
   if not campaign['enable_local'] and product['channel'] == 'local':

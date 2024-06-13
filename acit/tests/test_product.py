@@ -26,14 +26,14 @@ class ProductTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       {
-          'testcase_name': 'product_bidding_category_wildcard',
-          'dimension': {'productBiddingCategory': {'level': 'LEVEL5'}},
+          'testcase_name': 'product_category_wildcard',
+          'dimension': {'productCategory': {'level': 'LEVEL5'}},
           'expected': True,
       },
       {
-          'testcase_name': 'product_bidding_category_specific',
+          'testcase_name': 'product_category_specific',
           'dimension': {
-              'productBiddingCategory': {'id': '1', 'level': 'LEVEL5'}
+              'productCategory': {'categoryId': '1', 'level': 'LEVEL5'}
           },
           'expected': False,
       },
@@ -128,7 +128,7 @@ class ProductTest(parameterized.TestCase):
           'testcase_name': 'product_category_top_level_match',
           'product': {'googleProductCategory': 'Animals & Pet Supplies'},
           'dimension': {
-              'productBiddingCategory': {'id': '1', 'level': 'LEVEL1'}
+              'productCategory': {'categoryId': '1', 'level': 'LEVEL1'}
           },
           'expected': True,
       },
@@ -136,14 +136,14 @@ class ProductTest(parameterized.TestCase):
           'testcase_name': 'product_category_top_level_mismatch',
           'product': {'googleProductCategory': 'Animals & Pet Supplies'},
           'dimension': {
-              'productBiddingCategory': {'id': '2', 'level': 'LEVEL1'}
+              'productCategory': {'categoryId': '2', 'level': 'LEVEL1'}
           },
           'expected': False,
       },
       {
           'testcase_name': 'product_category_top_level_wildcard_match',
           'product': {'googleProductCategory': 'Animals & Pet Supplies'},
-          'dimension': {'productBiddingCategory': {}},
+          'dimension': {'productCategory': {}},
           'expected': True,
       },
       {
@@ -230,15 +230,15 @@ class ProductTest(parameterized.TestCase):
               'children': [
                   {
                       'dimension': {
-                          'productBiddingCategory': {
+                          'productCategory': {
                               'level': 'LEVEL1',
-                              'id': '1',
+                              'categoryId': '1',
                           }
                       },
                       'isTargeted': True,
                   },
                   {
-                      'dimension': {'productBiddingCategory': {}},
+                      'dimension': {'productCategory': {}},
                       'isTargeted': False,
                   },
               ],
@@ -253,15 +253,15 @@ class ProductTest(parameterized.TestCase):
               'children': [
                   {
                       'dimension': {
-                          'productBiddingCategory': {
+                          'productCategory': {
                               'level': 'LEVEL1',
-                              'id': '2',
+                              'categoryId': '2',
                           }
                       },
                       'isTargeted': False,
                   },
                   {
-                      'dimension': {'productBiddingCategory': {}},
+                      'dimension': {'productCategory': {}},
                       'isTargeted': True,
                   },
               ],
