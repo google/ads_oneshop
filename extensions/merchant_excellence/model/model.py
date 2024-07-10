@@ -12,11 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Library to run model for Merchant Excellence Solution."""
+"""Model for Merchant Excellence Solution."""
+
+from absl import app
+from absl import flags
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
+
+
+_DATASET_NAME = flags.DEFINE_string(name='dataset_name', default=None, help='The dataset name.', required=True)
+_PROJECT_NAME = flags.DEFINE_string(name='project_name', default=None, help='The project name.', required=True)
 
 
 def prepare_raw_data(
@@ -62,7 +70,7 @@ def prepare_raw_data(
       if metric not in ['clicks_30days', 'impressions_30days']
   ]
   for metric in mex_metrics:
-    model_data[metric] = np.where((raw_data[metric] == 'TRUE'), 1, 0)
+    model_data[metric] = np.where((raw_data[metric] == True), 1, 0)
 
   return model_data
 
@@ -86,11 +94,16 @@ def run_model(
   """
 
   formula = f'{dependent_var}~{" + ".join(explanatory_var)}'
-  fit_model = smf.ols(formula=formula, data=model_data).fit()
-
-  model_results = pd.concat([fit_model.params, fit_model.pvalues], axis=1)
-  model_results.reset_index(inplace=True)
-  model_results.columns = ['mex_metric', 'effects', 'p_values']
+  mex_cols = ['mex_metric', 'effects', 'p_values']
+  try:
+    fit_model = smf.ols(formula=formula, data=model_data).fit()
+    print(fit_model.summary())
+    model_results = pd.concat([fit_model.params, fit_model.pvalues], axis=1)
+    model_results.reset_index(inplace=True)
+    model_results.columns = mex_cols
+  except ValueError as e:
+    print(f"Failed to run model: {e}")
+    model_results = pd.DataFrame(columns=mex_cols)
 
   return model_results
 
@@ -133,3 +146,47 @@ def format_model_results(
   )
 
   return model_output
+
+
+def main(argv: Sequence[str]):
+  del argv
+  sql = """SELECT * FROM `{}.MEX_ML_Data`""".format(_DATASET_NAME.value)
+  df = pd.read_gbq(sql, dialect="standard")
+  raw_metrics = list(df.columns)
+  model_data = prepare_raw_data(df, raw_metrics)
+  model_results = run_model(
+      model_data,
+      'ctr',
+      [
+          'has_dynamic_remarketing',
+          'has_free_listings',
+          'has_price_availability_aiu',
+          'has_item_level_shipping',
+          'has_account_level_shipping',
+          'has_image_aiu',
+          'has_availability_aiu',
+          'has_custom_label',
+          'has_item_group_id',
+          'has_good_product_type',
+          'has_brand',
+          'has_gtin',
+          'has_500_description',
+          'has_30_title',
+          'has_product_highlight',
+          'has_color',
+          'has_age_group',
+          'has_gender',
+          'has_size',
+          'has_mhlsf_implemented',
+          'has_store_pickup_implemented',
+          'has_odo_implemented',
+          'has_sale_price',
+          'has_additional_images',
+      ],
+  )
+  model_output = format_model_results(model_results, 1.0)
+  table_id = _DATASET_NAME.value + ".ML_Model_Output"
+  model_output.to_gbq(table_id, project_id=_PROJECT_NAME.value, if_exists='replace')
+
+if __name__ == '__main__':
+  app.run(main)
