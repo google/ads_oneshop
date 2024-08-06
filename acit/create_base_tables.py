@@ -43,6 +43,7 @@ from google.protobuf import json_format
 import apache_beam as beam
 from apache_beam import pipeline
 from apache_beam.io import textio
+from apache_beam.io import fileio
 from apache_beam.options import pipeline_options
 from apache_beam import pvalue
 
@@ -233,10 +234,13 @@ def main(argv):
     # Process LIA settings
     _ = (
         p
-        | 'Read LIA Settings'
-        >> textio.ReadFromText(
-            f'{source_dir}/*/merchant_center/*/liasettings/*.jsonlines'
+        | 'Glob LIA Settings files'
+        >> fileio.MatchFiles(
+            file_pattern=f'{source_dir}/*/merchant_center/*/liasettings/*.jsonlines',
+            empty_match_treatment=fileio.EmptyMatchTreatment.ALLOW_IF_WILDCARD,
         )
+        | 'Read LIA Settings'
+        >> textio.ReadAllFromText()
         | 'LIA Settings to JSON' >> beam.Map(json.loads)
         | 'LIA Settings to table format' >> beam.Map(convert_lia_settings)
         | 'LIA Settings back to JSON' >> beam.Map(json.dumps)
