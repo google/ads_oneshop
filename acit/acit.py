@@ -440,7 +440,11 @@ def main(_):
                 metadata={'accountId': account_id},
                 is_scalar=True,
             ):
-              print(json.dumps(result), file=f)
+              d = {
+                  'settings': result,
+                  'children': [],
+              }
+              print(json.dumps(d), file=f)
           except http.HttpError as e:
             if (
                 str(e.status_code) == '404'
