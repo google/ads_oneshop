@@ -239,8 +239,7 @@ def main(argv):
             file_pattern=f'{source_dir}/*/merchant_center/*/liasettings/*.jsonlines',
             empty_match_treatment=fileio.EmptyMatchTreatment.ALLOW_IF_WILDCARD,
         )
-        | 'Read LIA Settings'
-        >> textio.ReadAllFromText()
+        | 'Read LIA Settings' >> textio.ReadAllFromText()
         | 'LIA Settings to JSON' >> beam.Map(json.loads)
         | 'LIA Settings to table format' >> beam.Map(convert_lia_settings)
         | 'LIA Settings back to JSON' >> beam.Map(json.dumps)

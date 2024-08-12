@@ -12,3 +12,5 @@ coverage.xml
 *.jsonlines
 __pycache__/
 **~
+.#*
+*#*
