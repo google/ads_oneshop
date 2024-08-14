@@ -89,10 +89,10 @@ WITH
   ),
   AccountLevelShipping AS (
     SELECT DISTINCT
-      accountId AS merchant_id,
-      ARRAY_LENGTH(services) > 0 AS has_account_level_shipping
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings
-  ),
+      S.settings.accountId AS merchant_id,
+      ARRAY_LENGTH(S.settings.services) > 0 AS has_account_level_shipping
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS S
+),
   Account AS (
     SELECT DISTINCT
       C.id AS merchant_id,
