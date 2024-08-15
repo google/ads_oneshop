@@ -26,12 +26,12 @@ class TestModel(unittest.TestCase):
   def test_prepare_raw_data_correct(self):
     input_data = pd.DataFrame(
         data=[
-            [5, 100, 'TRUE', 'FALSE', 'TRUE'],
-            [10, 100, 'TRUE', 'TRUE', 'FALSE'],
-            [15, 100, 'TRUE', 'TRUE', 'TRUE'],
-            [20, 'null', 'TRUE', 'TRUE', 'TRUE'],
-            [30, '0', 'TRUE', 'TRUE', 'TRUE'],
-            [40, 0, 'TRUE', 'TRUE', 'TRUE'],
+            [5, 100, True, False, True],
+            [10, 100, True, True, False],
+            [15, 100, True, True, True],
+            [20, 'null', True, True, True],
+            [30, '0', True, True, True],
+            [40, 0, True, True, True],
         ],
         columns=['clicks_30days', 'impressions_30days', 'mex1', 'mex2', 'mex3'],
     )
