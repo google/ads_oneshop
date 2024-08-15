@@ -113,10 +113,9 @@ class TestModel(unittest.TestCase):
 
     expected_result = pd.DataFrame(
         data=[
-            ['Intercept', 0.027917, 0.000010],
-            ['mex1', 0.047083, 0.000015],
-            ['mex2', 0.002083, 0.686624],
-            ['mex3', -0.021250, 0.00360],
+          ['mex1', 0.003033, 0],
+          ['mex2', 0.002083, 0],
+          ['mex3', 0.012829, 0],
         ],
         columns=[
             'mex_metric',

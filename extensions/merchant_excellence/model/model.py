@@ -20,7 +20,9 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
+
+from sklearn import linear_model
+import shap
 
 
 _DATASET_NAME = flags.DEFINE_string(name='dataset_name', default=None, help='The dataset name.', required=True)
@@ -93,12 +95,23 @@ def run_model(
       metric.
   """
 
-  formula = f'{dependent_var}~{" + ".join(explanatory_var)}'
   mex_cols = ['mex_metric', 'effects', 'p_values']
+  X = model_data[explanatory_var]
+  y = model_data[dependent_var]
+
   try:
-    fit_model = smf.ols(formula=formula, data=model_data).fit()
-    print(fit_model.summary())
-    model_results = pd.concat([fit_model.params, fit_model.pvalues], axis=1)
+    fit_model = linear_model.RidgeCV(
+        alphas=[0.001, 0.01, 1, 10, 50, 100], cv=3
+    ).fit(X, y)
+    explainer = shap.LinearExplainer(
+        model=fit_model, masker=shap.maskers.Independent(data=X)
+    )
+    shapley_values = explainer(X)
+    model_results = pd.DataFrame(
+        data={'abs_mean': shapley_values.abs.mean(0).values},
+        index=X.columns,
+    )
+    model_results['p_values'] = 0 # temp before fixing format
     model_results.reset_index(inplace=True)
     model_results.columns = mex_cols
   except ValueError as e:
