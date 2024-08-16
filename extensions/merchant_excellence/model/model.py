@@ -123,42 +123,52 @@ def run_model(
 
 def format_model_results(
     model_results: pd.DataFrame,
-    significant_threshold: float = 0.10
+    significant_threshold: float = 0.0,
+    priority_setting=0.4999,
 ) -> pd.DataFrame:
   """Formats the model results and applies a priority layer.
 
   Args:
-    model_results: Dataframe for model results that contains effects and
-      p_values.
-    significant_threshold: Threshold for statistical significance.
+    model_results: Dataframe for model results that contains effects of and
+      Shapley values of each MEX metric.
+    significant_threshold: Threshold for variable importance using Shapley
+      values. Typically anything above 0 means it has meaningful impact on the
+      metric.
+    priority_setting: Parameter between 0 and 1 for splitting the medium and
+      high priority buckets. Higher values mean more metrics will be placed into
+      medium priority and lower values means more metrics will be placed into
+      high priority.
 
   Returns:
     model_output: Dataframe that contains priority level for each MEX metric.
   """
 
-  model_results = model_results.drop(
-      model_results[model_results['mex_metric'] == 'Intercept'].index
-  )
   model_results['significant'] = np.where(
-      model_results['p_values'] <= significant_threshold, True, False
-  )
-  model_results['effects_guardrail'] = np.where(
-      model_results['significant'], model_results['effects'], 0
+      model_results['effects'] > significant_threshold, True, False
   )
 
-  # priority mapping layer
-  priority_layer = pd.qcut(
-      model_results['effects_guardrail'],
-      q=[0, 0.25, 0.75, 1],
-      labels=['Low', 'Medium', 'High'],
-  )
-  priority_layer.name = 'priority'
-
-  model_output = pd.concat([model_results, priority_layer], axis=1).reset_index(
-      drop=True
+  significant_metrics = model_results[
+      model_results['significant'] == True
+  ].copy()
+  significant_metrics['priority'] = pd.qcut(
+      significant_metrics['effects'],
+      q=[0, priority_setting, 1],
+      labels=['Medium', 'High'],
   )
 
-  return model_output
+  formatted_results = model_results.merge(
+      significant_metrics[['mex_metric', 'priority']],
+      on=['mex_metric'],
+      how='left',
+  )
+
+  formatted_results['priority'] = np.where(
+      formatted_results['significant'] == False,
+      'Low',
+      formatted_results['priority'],
+  )
+
+  return formatted_results
 
 
 def main(argv: Sequence[str]):
