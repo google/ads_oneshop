@@ -137,46 +137,38 @@ class TestModel(unittest.TestCase):
   def test_format_model_results_correct(self):
     input_data = pd.DataFrame(
         data=[
-            ['Intercept', 0.01, 0.001],
-            ['mex1', 0.05, 0.0001],
-            ['mex2', 0.01, 0.10],
-            ['mex3', -1, 0.50],
-            ['mex4', 0.025, 0.0001],
-            ['mex5', -0.5, 0.10],
+            ['mex1', 0.05],
+            ['mex2', 0.01],
+            ['mex3', 0.0001],
+            ['mex4', 0],
+            ['mex5', 0],
         ],
         columns=[
             'mex_metric',
             'effects',
-            'p_values',
         ],
     )
 
     expected_result = pd.DataFrame(
         data=[
-            ['mex1', 0.05, 0.0001, True, 0.05, 'High'],
-            ['mex2', 0.01, 0.10, True, 0.01, 'Medium'],
-            ['mex3', -1, 0.50, False, 0.0, 'Low'],
-            ['mex4', 0.025, 0.0001, True, 0.025, 'Medium'],
-            ['mex5', -0.5, 0.10, True, -0.5, 'Low'],
+            ['mex1', 0.05, True, 'High'],
+            ['mex2', 0.01, True, 'High'],
+            ['mex3', 0.0001, True, 'Medium'],
+            ['mex4', 0, False, 'Low'],
+            ['mex5', 0, False, 'Low'],
         ],
         columns=[
             'mex_metric',
             'effects',
-            'p_values',
             'significant',
-            'effects_guardrail',
             'priority'
         ],
-    )
-    expected_result['priority'] = pd.Categorical(
-        expected_result['priority'],
-        ordered=True,
-        categories=['Low', 'Medium', 'High']
     )
 
     result = model.format_model_results(
         model_results=input_data,
-        significant_threshold=0.10
+        significant_threshold=0,
+        priority_setting=0.4999
     )
 
     pd.testing.assert_frame_equal(result, expected_result)
