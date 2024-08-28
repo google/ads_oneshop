@@ -94,14 +94,24 @@ On a Linux/Mac machine (or VM, or GCP console):
     cd ads_oneshop/
     ```
 
-2.  **Ensure you have Python 3.9+ and set up a virtual environment**
+2.  **Ensure you have Go, Python 3.9+ and set up a virtual environment**
+
+    *   Check if Go is installed:
+
+    ```bash
+    which go
+    ```
+
+    If you do not see any output, install Go from your package manager or
+    https://go.dev/
 
     *   Create a virtual env. with the following commands:
 
     ```bash
     python -m venv ./.venv
     source ./.venv/bin/activate
-    python -m pip install --upgrade -r acit/requirements.txt
+    python -m pip install -U pip wheel
+    python -m pip install -e .
     ```
 
 3.  **Set up your GCP CLI**

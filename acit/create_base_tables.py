@@ -36,7 +36,7 @@ from acit import performance_max
 from acit import shopping
 from acit import product
 from acit import resource_downloader
-from acit import schema_pb2
+from acit.api.v0.storage import schema_pb2
 
 from google.protobuf import json_format
 

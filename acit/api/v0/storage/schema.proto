@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package acit;
+package acit.v0.storage;
 
-import "acit/bq_table.proto";
+import "gen_bq_schema/bq_table.proto";
 
 message WideProduct {
   option (gen_bq_schema.bigquery_opts).table_name = "Products";

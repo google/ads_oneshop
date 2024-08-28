@@ -1,0 +1,32 @@
+[project]
+name = 'gtech-oneshop'
+version = '1.0'
+requires-python = '>= 3.9'
+dependencies = [
+  'google-ads',
+  'google-api-python-client',
+  'google-auth',
+  'google-auth-oauthlib',
+  'google-auth-httplib2',
+  'google-cloud-bigquery',
+  'google-cloud-storage',
+  'six',
+  'absl-py',
+  'apache-beam',
+  'pyarrow-hotfix',
+  'protobuf',
+]
+
+[build-system]
+# We need the generated protos to use a version of protobuf compatible with beam and grpc
+requires = [
+  'setuptools',
+  'grpcio-tools',
+  'apache-beam',
+  'protobuf',
+]
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+packages = ['acit']
+package-dir = {'' = '.'}
