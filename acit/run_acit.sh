@@ -112,7 +112,8 @@ upload_to_bq() {
 
   bq load $BQ_FLAGS \
     "${PROJECT_NAME}:${DATASET_NAME}.accounts" \
-    "${BQ_DIR}/accounts.jsonlines"
+    "${BQ_DIR}/accounts.jsonlines" \
+    acit/schemas/acit/accounts.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.accounts"
 
   if [[ "${ADMIN}" = true ]]; then
