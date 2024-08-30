@@ -19,3 +19,5 @@ gen_bq_schema/
 *.egg-info/
 *\.json*-of-*
 *_pb2.py*
+dist/
+acit/api/**/*.schema

@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package acit.v0.storage;
+package acit.api.v0.storage;
 
 import "gen_bq_schema/bq_table.proto";
 

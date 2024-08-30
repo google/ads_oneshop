@@ -125,7 +125,7 @@ upload_to_bq() {
     bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.liasettings" \
       "${BQ_DIR}/liasettings.jsonlines" \
-      acit/schemas/acit/liasettings.schema
+      acit/api/v0/storage/liasettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.liasettings"
   fi
 
@@ -143,7 +143,7 @@ upload_to_bq() {
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.products" \
     "${BQ_DIR}/products.jsonlines" \
-    acit/schemas/acit/Products.schema
+    acit/api/v0/storage/Products.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.products"
 }
 
