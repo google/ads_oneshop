@@ -31,10 +31,12 @@ import os
 import datetime
 import json
 import pathlib
+from concurrent import futures
+import multiprocessing as mp
 
 import sys
 
-from typing import Set
+from typing import Set, Any
 
 if sys.version_info < (3, 9, 0):
   # Required for union operators
@@ -248,6 +250,82 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
     _ACIT_MC_SHIPPINGSETTINGS_RESOURCE,
 ]
 
+def _get_merchant_center_api() -> Any:
+  # Technically, we already had creds from Ads. This is duplicative.
+  #   In a perfect world, we use something like Secret Manager to retrieve
+  #   OAuth client creds, Ads Dev tokens, and refresh tokens by account id.
+  #   See https://developers.google.com/identity/protocols/oauth2/policies
+  creds, _ = google.auth.default()
+  merchant_api = discovery.build('content', 'v2.1', credentials=creds)
+  return merchant_api
+
+
+def _pull_standalone_account_resource(acit_mc_output_dir, parent_id, account_id, resource) -> None:
+  merchant_api = _get_merchant_center_api()
+  logging.info(
+      '...pulling standalone account-level resource %s...' % resource
+  )
+  output_file = os.path.join(
+      acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
+  )
+  pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+  with open(output_file, 'wt') as f:
+    try:
+      for result in resource_downloader.download_resources(
+          client=merchant_api,
+          resource_name=resource,
+          params={
+              'merchantId': parent_id,
+              'accountId': account_id,
+          },
+          parent_resource='',
+          parent_params={},
+          resource_method='get',
+          result_path='',
+          metadata={'accountId': account_id},
+          is_scalar=True,
+      ):
+        d = {
+            'settings': result,
+            'children': [],
+        }
+        print(json.dumps(d), file=f)
+    except http.HttpError as e:
+      if (
+          str(e.status_code) == '404'
+          and resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
+      ):
+        logging.warning(
+            (
+                'Unable to find shipping settings for account %s. '
+                "It's possible no such setting exists."
+            )
+            % account_id
+        )
+      else:
+        raise e
+
+def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
+  merchant_api = _get_merchant_center_api()
+  logging.info('...pulling resource %s...' % resource)
+  output_file = os.path.join(
+      acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
+  )
+  pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+  with open(output_file, 'wt') as f:
+    for result in resource_downloader.download_resources(
+        client=merchant_api,
+        resource_name=resource,
+        # Yes, 'merchantId' is inconsistent with the rest of the API.
+        params={'merchantId': account_id, 'maxResults': 250},
+        parent_resource='',
+        parent_params={},
+        resource_method='list',
+        result_path='resources',
+        metadata={'accountId': account_id},
+    ):
+      print(json.dumps(result), file=f)
+
 
 def main(_):
   if _VALIDATE_ONLY.value:
@@ -312,11 +390,6 @@ def main(_):
 
   # TODO: break out Merchant Center logic into its own file
   logging.info('Loading Merchant Center data...')
-  # Technically, we already had creds from Ads. This is duplicative.
-  #   In a perfect world, we use something like Secret Manager to retrieve
-  #   OAuth client creds, Ads Dev tokens, and refresh tokens by account id.
-  #   See https://developers.google.com/identity/protocols/oauth2/policies
-  creds, _ = google.auth.default()
 
   # Before we can do anything, we need to know what type of accounts we're
   # dealing with.
@@ -324,8 +397,8 @@ def main(_):
   input_ids = set(_MERCHANT_CENTER_IDS.value)
   # Preload Merchant Center authinfo so we know which accounts (for this
   # user) are top-level.
-  merchant_api = discovery.build('content', 'v2.1', credentials=creds)
   # The sets of accessible aggregators and standlone accounts
+  merchant_api = _get_merchant_center_api()
   aggregator_ids: Set[str] = set()
   standalone_ids: Set[str] = set()
   # All leaf accounts we will actually process
@@ -408,77 +481,46 @@ def main(_):
         with open(output_file, 'wt') as f:
           print(json.dumps(parent), file=f)
 
-  for account_id in leaf_ids | (standalone_ids & input_ids):
-    logging.info('Processing Merchant Center ID %s...' % account_id)
-    # We need account-level resources
-    for resource in acit_account_resources:
-      # TODO(b/305301891): Remove after shippingsettings.list is fixed.
-      if (
-          account_id in standalone_ids
-          or resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
-      ):
-        logging.info(
-            '...pulling standalone account-level resource %s...' % resource
-        )
-        output_file = os.path.join(
-            acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
-        )
-        pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, 'wt') as f:
-          try:
-            for result in resource_downloader.download_resources(
-                client=merchant_api,
-                resource_name=resource,
-                params={
-                    'merchantId': leaf_to_parent.get(account_id, account_id),
-                    'accountId': account_id,
-                },
-                parent_resource='',
-                parent_params={},
-                resource_method='get',
-                result_path='',
-                metadata={'accountId': account_id},
-                is_scalar=True,
-            ):
-              d = {
-                  'settings': result,
-                  'children': [],
-              }
-              print(json.dumps(d), file=f)
-          except http.HttpError as e:
-            if (
-                str(e.status_code) == '404'
-                and resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
-            ):
-              logging.warning(
-                  (
-                      'Unable to find shipping settings for account %s. '
-                      "It's possible no such setting exists."
-                  )
-                  % account_id
-              )
-            else:
-              raise e
-
-    for resource in _ACIT_MC_RESOURCES:
-      logging.info('...pulling resource %s...' % resource)
-      output_file = os.path.join(
-          acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
-      )
-      pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-      with open(output_file, 'wt') as f:
-        for result in resource_downloader.download_resources(
-            client=merchant_api,
-            resource_name=resource,
-            # Yes, 'merchantId' is inconsistent with the rest of the API.
-            params={'merchantId': account_id, 'maxResults': 250},
-            parent_resource='',
-            parent_params={},
-            resource_method='list',
-            result_path='resources',
-            metadata={'accountId': account_id},
+  # Process all non-aggregator account data in parallel
+  with futures.ProcessPoolExecutor(
+      mp_context=mp.get_context('spawn')
+  ) as executor:
+    future_results: Dict[futures.Future[None], str] = {}
+    for account_id in leaf_ids | (standalone_ids & input_ids):
+      logging.info('Processing Merchant Center ID %s...' % account_id)
+      # We need account-level resources
+      parent_id = leaf_to_parent.get(account_id, account_id)
+      for resource in acit_account_resources:
+        # TODO(b/305301891): Remove after shippingsettings.list is fixed.
+        if (
+            account_id in standalone_ids
+            or resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
         ):
-          print(json.dumps(result), file=f)
+          future = executor.submit(
+              _pull_standalone_account_resource,
+              acit_mc_output_dir,
+              parent_id,
+              account_id,
+              resource
+          )
+          future_results[future] = f'{parent_id}/{resource}/{merchant_id}'
+
+      for resource in _ACIT_MC_RESOURCES:
+        future = executor.submit(
+            _pull_leaf_collection,
+            acit_mc_output_dir,
+            account_id,
+            resource
+        )
+        future_results[future] = f'{parent_id}/{resource}/{account_id}'
+
+    for completed in futures.as_completed(future_results):
+      api_path = future_results[completed]
+      try:
+        completed.result()
+        logging.info('Finished loading leaf resource: %s' % (api_path))
+      except http.HttpError as ex:
+        raise ValueError('Error retrieving resource %s' % (api_path)) from ex
 
   unprocessed = input_ids - (leaf_ids | standalone_ids | aggregator_ids)
   if unprocessed:
