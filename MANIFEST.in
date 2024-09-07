@@ -1,0 +1,4 @@
+graft ./acit
+prune ./acit/tests
+prune ./acit/api/v1
+exclude **/test_*.py

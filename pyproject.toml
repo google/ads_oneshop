@@ -22,11 +22,24 @@ dependencies = [
 requires = [
   'setuptools',
   'grpcio-tools',
-  'apache-beam',
+  'apache-beam >= 2.58.1',
   'protobuf',
+  'importlib-resources',
+  'typing-extensions',
 ]
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
-packages = ['acit']
-package-dir = {'' = '.'}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ['acit*', 'gen_bq_schema*']
+
+[tool.setuptools.package-dir]
+# This blank path is required for protoc to know the root of the repo
+'' = '.'
+'acit' = './acit'
+'gen_bq_schema' = './gen_bq_schema'
+
+[tool.setuptools.exclude-package-data]
+'*' = ['*.proto']
