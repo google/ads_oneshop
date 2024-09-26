@@ -250,6 +250,7 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
     _ACIT_MC_SHIPPINGSETTINGS_RESOURCE,
 ]
 
+
 def _get_merchant_center_api() -> Any:
   # Technically, we already had creds from Ads. This is duplicative.
   #   In a perfect world, we use something like Secret Manager to retrieve
@@ -260,11 +261,11 @@ def _get_merchant_center_api() -> Any:
   return merchant_api
 
 
-def _pull_standalone_account_resource(acit_mc_output_dir, parent_id, account_id, resource) -> None:
+def _pull_standalone_account_resource(
+    acit_mc_output_dir, parent_id, account_id, resource
+) -> None:
   merchant_api = _get_merchant_center_api()
-  logging.info(
-      '...pulling standalone account-level resource %s...' % resource
-  )
+  logging.info('...pulling standalone account-level resource %s...' % resource)
   output_file = os.path.join(
       acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
   )
@@ -304,6 +305,7 @@ def _pull_standalone_account_resource(acit_mc_output_dir, parent_id, account_id,
         )
       else:
         raise e
+
 
 def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
   merchant_api = _get_merchant_center_api()
@@ -501,16 +503,13 @@ def main(_):
               acit_mc_output_dir,
               parent_id,
               account_id,
-              resource
+              resource,
           )
           future_results[future] = f'{parent_id}/{resource}/{merchant_id}'
 
       for resource in _ACIT_MC_RESOURCES:
         future = executor.submit(
-            _pull_leaf_collection,
-            acit_mc_output_dir,
-            account_id,
-            resource
+            _pull_leaf_collection, acit_mc_output_dir, account_id, resource
         )
         future_results[future] = f'{parent_id}/{resource}/{account_id}'
 

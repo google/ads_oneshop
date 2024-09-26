@@ -217,18 +217,22 @@ class TestGenerator(absltest.TestCase):
     expected_criteria_length = 6
 
     model = {
-        'advertisers': [{
-            'campaigns': [{
-                'enable_local': False,
-                'feed_label': 'online',
-                'id': campaign_id,
-                'listing_scopes': [],
-                'merchant_id': 64438,
-                'targeting': [('CATEGORY', category_id)],
-                'type': 'SHOPPING',
-            }],
-            'id': customer_id,
-        }]
+        'advertisers': [
+            {
+                'campaigns': [
+                    {
+                        'enable_local': False,
+                        'feed_label': 'online',
+                        'id': campaign_id,
+                        'listing_scopes': [],
+                        'merchant_id': 64438,
+                        'targeting': [('CATEGORY', category_id)],
+                        'type': 'SHOPPING',
+                    }
+                ],
+                'id': customer_id,
+            }
+        ]
     }
 
     g = gtd.Generator(model=model)

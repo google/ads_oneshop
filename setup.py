@@ -13,7 +13,6 @@ from importlib import resources
 import logging
 
 
-
 _ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 _GEN_BQ_SCHEMA_PKG = (

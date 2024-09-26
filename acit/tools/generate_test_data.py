@@ -369,10 +369,12 @@ class Generator:
             'adsRedirect': 'https://google.com',
             'pickupMethod': 'ship to store',
             'pickupSla': 'multi week',
-            'customAttributes': [{
-                'name': 'dummy custom attribute name',
-                'value': 'dummy custom attribute value',
-            }],
+            'customAttributes': [
+                {
+                    'name': 'dummy custom attribute name',
+                    'value': 'dummy custom attribute value',
+                }
+            ],
             'downloaderMetadata': {'accountId': merchant_id},
         }
         for i, label in enumerate(labels):
@@ -628,12 +630,14 @@ class Generator:
       d = {
           'productCategoryConstant': {
               'categoryId': category_id,
-              'localizations': [{
-                  'regionCode': 'US',
-                  'languageCode': 'en',
-                  # We only need the last one
-                  'value': taxonomy[-1],
-              }],
+              'localizations': [
+                  {
+                      'regionCode': 'US',
+                      'languageCode': 'en',
+                      # We only need the last one
+                      'value': taxonomy[-1],
+                  }
+              ],
           }
       }
       row = google_ads_service.GoogleAdsRow.from_json(json.dumps(d))

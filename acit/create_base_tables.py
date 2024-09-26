@@ -357,13 +357,15 @@ def main(argv):
         | 'Join product tables where possible'
         # Downloaders may suffer from race conditions
         >> beam.FlatMapTuple(
-            lambda k, v: [{
-                'accountId': k[0],
-                'offerId': k[1],
-                # Guaranteed to be 1 of each if we reach here
-                'product': v['products'][0],
-                'status': v['statuses'][0],
-            }]
+            lambda k, v: [
+                {
+                    'accountId': k[0],
+                    'offerId': k[1],
+                    # Guaranteed to be 1 of each if we reach here
+                    'product': v['products'][0],
+                    'status': v['statuses'][0],
+                }
+            ]
             if v['products'] and v['statuses']
             else []
         )
