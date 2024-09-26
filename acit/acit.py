@@ -487,7 +487,7 @@ def main(_):
   with futures.ProcessPoolExecutor(
       mp_context=mp.get_context('spawn')
   ) as executor:
-    future_results: Dict[futures.Future[None], str] = {}
+    future_results: dict[futures.Future[None], str] = {}
     for account_id in leaf_ids | (standalone_ids & input_ids):
       logging.info('Processing Merchant Center ID %s...' % account_id)
       # We need account-level resources
@@ -505,7 +505,7 @@ def main(_):
               account_id,
               resource,
           )
-          future_results[future] = f'{parent_id}/{resource}/{merchant_id}'
+          future_results[future] = f'{parent_id}/{resource}/{account_id}'
 
       for resource in _ACIT_MC_RESOURCES:
         future = executor.submit(

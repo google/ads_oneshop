@@ -60,17 +60,14 @@ def build_product_group_tree(
   campaign_id = first['campaign']['id']
   ad_group_id = first['adGroup']['id']
   node = util.ProductTargetingNode(children=[], dimension={}, isTargeted=None)
-  if not rest:
+  path = first['adGroupCriterion']['listingGroup'].get('path', {})
+  if not rest and not path:
     # only one LISTING_GROUP criterion: this must be a wildcard
-    assert not first['adGroupCriterion']['listingGroup'].get('path', {})
     node['isTargeted'] = not first['adGroupCriterion']['negative']
   else:
     for criterion in [first] + rest:
-      dimensions = criterion['adGroupCriterion']['listingGroup']['path'][
-          'dimensions'
-      ]
       is_targeted = not criterion['adGroupCriterion']['negative']
-      util.build_product_group_tree(dimensions, node, is_targeted)
+      util.build_product_group_tree(path['dimensions'], node, is_targeted)
 
   tree = util.ProductTargetingTree(
       customer_id=customer_id,

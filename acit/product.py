@@ -288,7 +288,16 @@ def product_targeted_by_tree(
     elif dimension_matches_product(product, dimension, category_names_by_id):
       matcher = child
   first_match = matcher or wildcard
-  assert first_match
+  if not first_match:
+    # NOTE: This is a bad data scenario.
+    #
+    # We don't actually know whether this product is targeted or not. But we
+    # should err on the side of caution and report the product as untargeted.
+    #
+    # Unfortunately, if a wildcard exists, we will never hit this flow, and
+    # will have to return the targeting value of the wildcard.
+    return False
+
   return product_targeted_by_tree(product, first_match, category_names_by_id)
 
 

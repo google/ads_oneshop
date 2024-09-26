@@ -277,3 +277,237 @@ class ProductTest(parameterized.TestCase):
         ),
         expected,
     )
+
+  @parameterized.named_parameters(
+      {
+          'testcase_name': 'explicit_match',
+          'product': {'productTypes': ['my level1 type']},
+          'node': {
+              'children': [
+                  {
+                      'children': [],
+                      'dimension': {
+                          'productType': {
+                              'level': 'LEVEL1',
+                              'value': 'my level1 type',
+                          }
+                      },
+                      'isTargeted': True,
+                  },
+                  # Even though we don't have the full tree, we know that this
+                  # product type is targeted
+              ],
+              'dimension': {},
+              'isTargeted': None,
+          },
+          'expected': True,
+      },
+      {
+          'testcase_name': 'no_match_no_wildcard',
+          'product': {'productTypes': ['no_match_type']},
+          'node': {
+              'children': [
+                  {
+                      'children': [],
+                      'dimension': {
+                          'productType': {
+                              'level': 'LEVEL1',
+                              'value': 'my level1 type',
+                          }
+                      },
+                      'isTargeted': False,
+                  },
+                  # There may be a wildcard here which includes this product
+                  # type, but we don't actually know
+              ],
+              'dimension': {},
+              'isTargeted': None,
+          },
+          # We must assume (cautiously) that this product is not targeted.
+          'expected': False,
+      },
+      {
+          'testcase_name': 'match_with_wildcard',
+          'product': {'productTypes': ['my level1 type']},
+          'node': {
+              'children': [
+                  {
+                      'children': [],
+                      'dimension': {
+                          'productType': {
+                              'level': 'LEVEL1',
+                              # wildcard, value is omitted
+                          }
+                      },
+                      'isTargeted': False,
+                  }
+                  # We would expect a missing branch here which explicitly
+                  # *excludes* this product type.
+              ],
+              'dimension': {},
+              'isTargeted': None,
+          },
+          # In this scenario, we would want to return `True`, but we are forced
+          # to take the value of the wildcard.
+          'expected': False,
+      },
+      {
+          'testcase_name': 'no_match_with_wildcard',
+          'product': {'productTypes': ['no_match_type']},
+          'node': {
+              'children': [
+                  {
+                      'children': [],
+                      'dimension': {
+                          'productType': {
+                              'level': 'LEVEL1',
+                              # wildcard, value is omitted
+                          }
+                      },
+                      'isTargeted': True,
+                  },
+                  # We would expect a missing branch here which explicitly
+                  # *excludes* this product type.
+              ],
+              'dimension': {},
+              'isTargeted': None,
+          },
+          # Since there is no explicit match and we're missing branches, we want
+          # to be cautious and report the product as untargeted (`False`), even
+          # though this may be wrong. But we are forced to take the wildcard
+          # targeting. This may result in overreported product targeting.
+          'expected': True,
+      },
+  )
+  def test_product_targeted_by_unbalanced_tree(self, product, node, expected):
+    actual = product_util.product_targeted_by_tree(
+        product, node, _PRODUCT_CATEGORIES_BY_ID
+    )
+    self.assertEqual(expected, actual)
+
+  def test_build_product_group_tree_empty_root(self):
+    dimensions = [
+        {
+            'productType': {
+                'level': 'LEVEL1',
+                'value': 'my level1 type',
+            },
+        },
+        {
+            'productType': {
+                'level': 'LEVEL2',
+                # This is a wildcard, so we omit `value`
+            },
+        },
+    ]
+    root: product_util.ProductTargetingNode = {
+        'children': [],
+        'dimension': {},
+        'isTargeted': None,
+    }
+    is_targeted = True
+
+    expected = {
+        'children': [
+            {
+                'children': [
+                    {
+                        'children': [],
+                        'dimension': {'productType': {'level': 'LEVEL2'}},
+                        'isTargeted': True,
+                    }
+                ],
+                'dimension': {
+                    'productType': {
+                        'level': 'LEVEL1',
+                        'value': 'my level1 type',
+                    }
+                },
+                'isTargeted': None,
+            }
+        ],
+        'dimension': {},
+        'isTargeted': None,
+    }
+
+    product_util.build_product_group_tree(dimensions, root, is_targeted)
+
+    self.assertEqual(expected, root)
+
+  def test_build_product_group_tree_with_matches(self):
+    dimensions = [
+        {
+            'productType': {
+                'level': 'LEVEL1',
+                'value': 'my level1 type',
+            },
+        },
+        {
+            'productType': {
+                'level': 'LEVEL2',
+                'value': 'my level2 type',
+            },
+        },
+    ]
+
+    root: product_util.ProductTargetingNode = {
+        'children': [
+            {
+                'children': [
+                    {
+                        'children': [],
+                        'dimension': {'productType': {'level': 'LEVEL2'}},
+                        'isTargeted': True,
+                    },
+                ],
+                'dimension': {
+                    'productType': {
+                        'level': 'LEVEL1',
+                        'value': 'my level1 type',
+                    }
+                },
+                'isTargeted': None,
+            }
+        ],
+        'dimension': {},
+        'isTargeted': None,
+    }
+
+    is_targeted = False
+
+    expected: product_util.ProductTargetingNode = {
+        'children': [
+            {
+                'children': [
+                    {
+                        'children': [],
+                        'dimension': {'productType': {'level': 'LEVEL2'}},
+                        'isTargeted': True,
+                    },
+                    {
+                        'children': [],
+                        'dimension': {
+                            'productType': {
+                                'level': 'LEVEL2',
+                                'value': 'my level2 type',
+                            }
+                        },
+                        'isTargeted': False,
+                    },
+                ],
+                'dimension': {
+                    'productType': {
+                        'level': 'LEVEL1',
+                        'value': 'my level1 type',
+                    }
+                },
+                'isTargeted': None,
+            }
+        ],
+        'dimension': {},
+        'isTargeted': None,
+    }
+
+    product_util.build_product_group_tree(dimensions, root, is_targeted)
+
+    self.assertEqual(expected, root)
