@@ -15,6 +15,7 @@ dependencies = [
   'apache-beam',
   'pyarrow-hotfix',
   'protobuf',
+  'etils[epath-gcs]',
 ]
 
 [build-system]

@@ -23,7 +23,6 @@ from concurrent import futures
 import datetime
 import enum
 import multiprocessing as mp
-import os
 import textwrap
 from typing import Dict
 
@@ -32,6 +31,8 @@ from absl import flags
 from absl import logging
 
 from acit import ads
+
+from etils import epath
 
 from google.ads.googleads import client
 from google.ads.googleads.errors import GoogleAdsException
@@ -61,7 +62,7 @@ _QUERY = flags.DEFINE_string(
     ),
 )
 
-_OUTPUT_DIRECTORY = flags.DEFINE_string(
+_OUTPUT_DIRECTORY = epath.DEFINE_path(
     'output_dir', '', 'The directory to output leaf query results.'
 )
 
@@ -83,11 +84,6 @@ class QueryMode(enum.Enum):
   MCCS = 'mccs'
   ALL = 'all'
   SINGLE = 'single'
-
-
-_MODE = flags.DEFINE_enum_class(
-    'mode', QueryMode.LEAVES, enum_class=QueryMode, help='The query mode'
-)
 
 
 def get_children_query(mode: QueryMode = QueryMode.LEAVES):
@@ -125,11 +121,9 @@ GAQL_CAMPAIGNS = textwrap.dedent(
 )
 
 
-def get_directory_path(orig_path: str):
-  if not orig_path:
-    orig_path = os.path.curdir
-  path = os.path.realpath(os.path.expandvars(os.path.expanduser(orig_path)))
-  if not os.path.isdir(path):
+def get_directory_path(orig_path: str) -> epath.Path:
+  path = epath.Path(orig_path)
+  if not path.is_dir():
     raise ValueError(
         'Provided path does not exist or is not a folder: %s' % path
     )
@@ -150,8 +144,8 @@ def query_to_file(
       f'-{customer_id}.jsonlines'
   )
   full_dir = get_directory_path(output_dir)
-  path = os.path.join(full_dir, filename)
-  with open(path, 'wt') as file:
+  path = full_dir / filename
+  with path.open(mode='w') as file:
     # TODO: Add retry logic or backoff for robustness
     for row in ads.query(
         customer_id=customer_id, query=query, ads_client=ads_client
@@ -251,7 +245,7 @@ def main(unused_argv):
       ads_client,
       _ROOT_CUSTOMER_ID.value or _LOGIN_CUSTOMER_ID.value,
       prefix=_PREFIX.value,
-      output_dir=_OUTPUT_DIRECTORY.value,
+      output_dir=str(_OUTPUT_DIRECTORY.value),
   )
 
 

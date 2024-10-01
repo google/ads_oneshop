@@ -20,6 +20,8 @@ from absl import logging
 from acit import gaql
 from acit import resource_downloader
 
+from etils import epath
+
 from google.ads.googleads import client
 
 from googleapiclient import discovery
@@ -30,7 +32,6 @@ import google.auth
 import os
 import datetime
 import json
-import pathlib
 from concurrent import futures
 import multiprocessing as mp
 
@@ -61,7 +62,7 @@ _MERCHANT_CENTER_IDS = flags.DEFINE_multi_string(
     'The Merchant account ID. Expands Multi-client accounts.',
 )
 
-_OUTPUT_DIR = flags.DEFINE_string(
+_OUTPUT_DIR = epath.DEFINE_path(
     'output',
     '/tmp/acit',
     'The output directory for this data',
@@ -266,11 +267,15 @@ def _pull_standalone_account_resource(
 ) -> None:
   merchant_api = _get_merchant_center_api()
   logging.info('...pulling standalone account-level resource %s...' % resource)
-  output_file = os.path.join(
-      acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
+  output_file = (
+      epath.Path(acit_mc_output_dir)
+      / acit_mc_output_dir
+      / account_id
+      / resource
+      / 'rows.jsonlines'
   )
-  pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-  with open(output_file, 'wt') as f:
+  output_file.parent.mkdir(parents=True, exist_ok=True)
+  with output_file.open(mode='w') as f:
     try:
       for result in resource_downloader.download_resources(
           client=merchant_api,
@@ -310,11 +315,11 @@ def _pull_standalone_account_resource(
 def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
   merchant_api = _get_merchant_center_api()
   logging.info('...pulling resource %s...' % resource)
-  output_file = os.path.join(
-      acit_mc_output_dir, account_id, resource, 'rows.jsonlines'
+  output_file = (
+      epath.Path(acit_mc_output_dir) / account_id / resource / 'rows.jsonlines'
   )
-  pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-  with open(output_file, 'wt') as f:
+  output_file.parent.mkdir(parents=True, exist_ok=True)
+  with output_file.open(mode='w') as f:
     for result in resource_downloader.download_resources(
         client=merchant_api,
         resource_name=resource,
@@ -346,14 +351,12 @@ def main(_):
     return
   now = datetime.datetime.today().isoformat()
 
-  acit_output_dir = os.path.join(_OUTPUT_DIR.value, now)
-  acit_ads_output_dir = os.path.join(acit_output_dir, _ACIT_ADS_OUTPUT_DIR)
-  acit_mc_output_dir = os.path.join(acit_output_dir, _ACIT_MC_OUTPUT_DIR)
+  acit_output_dir = _OUTPUT_DIR.value / now
+  ads_path = acit_output_dir / _ACIT_ADS_OUTPUT_DIR
+  mc_path = acit_output_dir / _ACIT_MC_OUTPUT_DIR
 
   # Make sure paths exist
-  ads_path = pathlib.Path(acit_ads_output_dir)
   ads_path.mkdir(parents=True, exist_ok=True)
-  mc_path = pathlib.Path(acit_mc_output_dir)
   mc_path.mkdir(parents=True, exist_ok=True)
 
   # Download ads data
@@ -378,14 +381,14 @@ def main(_):
     # constants_gaql will be empty on subsequent invocations
     for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
       logging.info('...pulling resource %s...' % resource)
-      output_dir = os.path.join(acit_ads_output_dir, customer_id, resource)
-      pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+      output_dir = ads_path / customer_id / resource
+      output_dir.mkdir(parents=True, exist_ok=True)
       gaql.run_query(
           query=query,
           ads_client=ads_client,
           customer_id=customer_id,
           prefix=f'{_ACIT_ADS_PREFIX}_{resource}',
-          output_dir=output_dir,
+          output_dir=str(output_dir),
           query_mode=mode,
       )
   logging.info('Done loading Ads data.')
@@ -476,11 +479,10 @@ def main(_):
             leaf_ids.add(child['id'])
 
         # Wait until the end so the parent has all children
-        output_file = os.path.join(
-            acit_mc_output_dir, aggregator_id, name, 'rows.jsonlines'
-        )
-        pathlib.Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, 'wt') as f:
+        output_file = mc_path / aggregator_id / name / 'rows.jsonlines'
+
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        with output_file.open('w') as f:
           print(json.dumps(parent), file=f)
 
   # Process all non-aggregator account data in parallel
@@ -500,7 +502,7 @@ def main(_):
         ):
           future = executor.submit(
               _pull_standalone_account_resource,
-              acit_mc_output_dir,
+              str(mc_path),
               parent_id,
               account_id,
               resource,
@@ -509,7 +511,7 @@ def main(_):
 
       for resource in _ACIT_MC_RESOURCES:
         future = executor.submit(
-            _pull_leaf_collection, acit_mc_output_dir, account_id, resource
+            _pull_leaf_collection, str(mc_path), account_id, resource
         )
         future_results[future] = f'{parent_id}/{resource}/{account_id}'
 
