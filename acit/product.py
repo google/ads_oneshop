@@ -75,7 +75,7 @@ def build_campaign(
 
 def set_product_in_stock(product):
   """Sets a key on the composite product status for product availability."""
-  product['inStock'] = 'in stock' == product['product']['availability']
+  product['inStock'] = 'in stock' == product['product'].get('availability', '')
   return product
 
 
