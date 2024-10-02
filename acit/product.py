@@ -84,7 +84,7 @@ def set_product_approved(product):
   # NOTE: Everything that can be targeted is always 'Shopping"
   destinations = [
       d
-      for d in product['status']['destinationStatuses']
+      for d in product['status'].get('destinationStatuses', [])
       if d['destination'] == 'Shopping'
   ]
   # Should only be one
