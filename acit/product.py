@@ -401,7 +401,7 @@ def get_campaign_targeting(
         campaign, product, category_names_by_id, language_codes_by_resource_name
     ):
       continue
-    for tree in trees_by_campaign_id[campaign['campaign_id']]:
+    for tree in trees_by_campaign_id.get(campaign['campaign_id'], []):
       if product_targeted_by_tree(
           product['product'], tree['node'], category_names_by_id
       ):
