@@ -30,7 +30,6 @@ from googleapiclient import http
 import google.auth
 
 import os
-import datetime
 import json
 from concurrent import futures
 import multiprocessing as mp
@@ -349,15 +348,19 @@ def main(_):
           validate_only=True,
       )
     return
-  now = datetime.datetime.today().isoformat()
 
-  acit_output_dir = _OUTPUT_DIR.value / now
+  acit_output_dir = _OUTPUT_DIR.value
+
+  # Clear path
+  acit_output_dir.rmtree(missing_ok=True)
+  acit_output_dir.mkdir(parents=True)
+
   ads_path = acit_output_dir / _ACIT_ADS_OUTPUT_DIR
   mc_path = acit_output_dir / _ACIT_MC_OUTPUT_DIR
 
   # Make sure paths exist
-  ads_path.mkdir(parents=True, exist_ok=True)
-  mc_path.mkdir(parents=True, exist_ok=True)
+  ads_path.mkdir()
+  mc_path.mkdir()
 
   # Download ads data
   logging.info(
@@ -381,15 +384,21 @@ def main(_):
     # constants_gaql will be empty on subsequent invocations
     for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
       logging.info('...pulling resource %s...' % resource)
-      output_dir = ads_path / customer_id / resource
+      # NOTE: These directories were previously sharded on login account ID.
+      #
+      # Since BQ load only supports a single wildcard, we can't use directory
+      # sharding on the MCC here. Login accounts are run sequentially. But if
+      # this is ever changed, there is a possibility that two login accounts
+      # could write to the same child account, causing a race condition.
+      output_dir = ads_path / 'all' / resource
       output_dir.mkdir(parents=True, exist_ok=True)
       gaql.run_query(
           query=query,
           ads_client=ads_client,
           customer_id=customer_id,
-          prefix=f'{_ACIT_ADS_PREFIX}_{resource}',
           output_dir=str(output_dir),
           query_mode=mode,
+          use_simple_filename=True,
       )
   logging.info('Done loading Ads data.')
 

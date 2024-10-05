@@ -110,7 +110,7 @@ On a Linux/Mac machine (or VM, or GCP console):
     ```bash
     python -m venv ./.venv
     source ./.venv/bin/activate
-    python -m pip install -U pip wheel
+    python -m pip install -U pip wheel build
     python -m pip install -e .
     ```
 

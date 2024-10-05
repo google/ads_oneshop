@@ -52,7 +52,7 @@ import pyarrow_hotfix
 
 # Omit variable declaration so we can pickle __main__.
 flags.DEFINE_string(
-    'source_dir', '/tmp/acit', 'The root path for all source files.'
+    'source_dir', '/tmp/acit/*', 'The root path for all source files.'
 )
 flags.DEFINE_string('output', 'out.jsonlines', 'The file path to output to')
 
@@ -122,23 +122,23 @@ def main(argv):
         | 'Read Asset Group Listing Filters'
         >> _ReadGoogleAdsRows(
             'Asset Group Listing Filters',
-            f'{source_dir}/*/ads/*/asset_group_listing_filter/*.jsonlines',
+            f'{source_dir}/ads/*/asset_group_listing_filter/*.jsonlines',
         )
     )
 
     campaign_settings = p | 'Read Campaign Settings' >> _ReadGoogleAdsRows(
         'Campaign Settings',
-        f'{source_dir}/*/ads/*/campaign/*.jsonlines',
+        f'{source_dir}/ads/*/campaign/*.jsonlines',
     )
 
     campaign_criteria = p | 'Read Campaign Criteria' >> _ReadGoogleAdsRows(
         'Campaign Criteria',
-        f'{source_dir}/*/ads/*/campaign_criterion/*.jsonlines',
+        f'{source_dir}/ads/*/campaign_criterion/*.jsonlines',
     )
 
     ad_group_criteria = p | 'Read Ad Group Criteria' >> _ReadGoogleAdsRows(
         'Ad Group Criteria',
-        f'{source_dir}/*/ads/*/ad_group_criterion/*.jsonlines',
+        f'{source_dir}/ads/*/ad_group_criterion/*.jsonlines',
     )
 
     category_names_by_id = (
@@ -146,7 +146,7 @@ def main(argv):
         | 'Read Product Categories'
         >> _ReadGoogleAdsRows(
             'Product Categories',
-            f'{source_dir}/*/ads/*/product_category/*.jsonlines',
+            f'{source_dir}/ads/*/product_category/*.jsonlines',
         )
         | 'Create Category Mapping'
         >> beam.Map(
@@ -173,7 +173,7 @@ def main(argv):
         | 'Read Language Codes'
         >> _ReadGoogleAdsRows(
             'Language Codes',
-            f'{source_dir}/*/ads/*/language_constant/*.jsonlines',
+            f'{source_dir}/ads/*/language_constant/*.jsonlines',
         )
         | 'Create Language Mapping'
         >> beam.Map(
@@ -189,7 +189,7 @@ def main(argv):
         p
         | 'Read Products'
         >> textio.ReadFromText(
-            f'{source_dir}/*/merchant_center/*/products/*.jsonlines'
+            f'{source_dir}/merchant_center/*/products/*.jsonlines'
         )
         | 'Products to JSON' >> beam.Map(json.loads)
     )
@@ -198,7 +198,7 @@ def main(argv):
         p
         | 'Read Product Statuses'
         >> textio.ReadFromText(
-            f'{source_dir}/*/merchant_center/*/productstatuses/*.jsonlines'
+            f'{source_dir}/merchant_center/*/productstatuses/*.jsonlines'
         )
         | 'Product Statuses to JSON' >> beam.Map(json.loads)
     )
@@ -236,7 +236,9 @@ def main(argv):
         p
         | 'Glob LIA Settings files'
         >> fileio.MatchFiles(
-            file_pattern=f'{source_dir}/*/merchant_center/*/liasettings/*.jsonlines',
+            file_pattern=(
+                f'{source_dir}/merchant_center/*/liasettings/*.jsonlines'
+            ),
             empty_match_treatment=fileio.EmptyMatchTreatment.ALLOW_IF_WILDCARD,
         )
         | 'Read LIA Settings' >> textio.ReadAllFromText()
@@ -431,9 +433,6 @@ def main(argv):
         | 'JSON' >> beam.Map(json.dumps)
         | textio.WriteToText(flags.FLAGS.output)
     )
-
-    result = p.run()
-    result.wait_until_finish()
 
 
 if __name__ == '__main__':

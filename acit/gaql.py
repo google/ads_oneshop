@@ -74,7 +74,7 @@ _PREFIX = flags.DEFINE_string(
 
 _ADS_API_VERSION = flags.DEFINE_string(
     'ads_api_version',
-    'v14',
+    'v17',
     'The version of the Ads API to use',
 )
 
@@ -123,10 +123,7 @@ GAQL_CAMPAIGNS = textwrap.dedent(
 
 def get_directory_path(orig_path: str) -> epath.Path:
   path = epath.Path(orig_path)
-  if not path.is_dir():
-    raise ValueError(
-        'Provided path does not exist or is not a folder: %s' % path
-    )
+  path.mkdir(parents=True, exist_ok=True)
   return path
 
 
@@ -136,13 +133,27 @@ def query_to_file(
     ads_client: client.GoogleAdsClient,
     prefix: str = '',
     output_dir: str = '',
-):
+    use_simple_filename: bool = False,
+) -> None:
+  """Runs GAQL query, with output to a file.
+
+  Args:
+    customer_id: The customer ID to run against
+    query: The query to run.
+    ads_client: The Google Ads API client to use.
+    prefix: The file prefix to use. Ignored if use_simple_filename is set.
+    output_dir: The output directory.
+    use_simple_filename: Whether to use a simplified filename format.
+  """
   # TODO: Add a job ID either before or after the timestamp.
-  filename = (
-      f'{prefix}'
-      f'-{datetime.datetime.now(datetime.timezone.utc).isoformat()}'
-      f'-{customer_id}.jsonlines'
-  )
+  if use_simple_filename:
+    filename = f'{customer_id}-rows.jsonlines'
+  else:
+    filename = (
+        f'{prefix}'
+        f'-{datetime.datetime.now(datetime.timezone.utc).isoformat()}'
+        f'-{customer_id}.jsonlines'
+    )
   full_dir = get_directory_path(output_dir)
   path = full_dir / filename
   with path.open(mode='w') as file:
@@ -161,6 +172,7 @@ def run_query(
     output_dir: str = '',
     query_mode: QueryMode = QueryMode.LEAVES,
     validate_only: bool = False,
+    use_simple_filename: bool = False,
 ) -> None:
   """Run a query against a Google Ads account tree and write jsonlines files.
 
@@ -172,10 +184,12 @@ def run_query(
     query: The GAQL query to run.
     ads_client: The Google Ads client to use.
     customer_id: The customer ID to run the query against.
-    prefix: The filename prefix to add to each output file.
+    prefix: The filename prefix to add to each output file. Ignored if
+      use_simple_filename is set.
     output_dir: The directory to output the results.
     query_mode: The expansion behavior for this query.
     validate_only: Whether to validate the query only.
+    use_simple_filename: Whether to use a simplified filename format.
 
   Raises:
     GoogleAdsException: If this query results in an error using `validate_only`.
@@ -222,6 +236,7 @@ def run_query(
                     ads_client=ads_client,
                     prefix=prefix,
                     output_dir=output_dir,
+                    use_simple_filename=use_simple_filename,
                 ): leaf_id
             }
         )

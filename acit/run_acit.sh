@@ -47,14 +47,31 @@ if [[ -z "$DATASET_LOCATION" ]]; then
 fi
 
 if [[ -z "${ADMIN}" ]]; then
-  echo '$ADMIN is not defined. Please declare as true or false.'
+  echo '$ADMIN is not defined. Please declare as true or false.' 1>&2
   exit 1
 fi
 
+# Experimental flag for using the Dataflow runner
+USE_DATAFLOW_RUNNER="${USE_DATAFLOW_RUNNER:-false}"
 
-SOURCES_DIR="${STAGING_DIR}/sources"
-SINKS_DIR="${STAGING_DIR}/sinks"
-BQ_DIR="${STAGING_DIR}/bq"
+if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
+  if [[ -z "${DATAFLOW_TEMP_LOCATION}" ]]; then
+    echo '$DATAFLOW_TEMP_LOCATION is required when using the dataflow runner.' 1>&2
+    exit 1
+  fi
+  if [[ -z "${DATAFLOW_REGION}" ]]; then
+    echo '$DATAFLOW_REGION is required when using the dataflow runner.' 1>&2
+    exit 1
+  fi
+fi
+
+DEFAULT_RUN_ID="$(date -Iseconds)"
+
+RUN_ID="${RUN_ID:-${DEFAULT_RUN_ID}}"
+
+SOURCES_DIR="${STAGING_DIR}/${RUN_ID}/sources"
+SINKS_DIR="${STAGING_DIR}/${RUN_ID}/sinks"
+BQ_DIR="${STAGING_DIR}/${RUN_ID}/bq"
 
 declare -a merchant_id_flags
 IFS=',' read -ra merchant_ids <<< "$MERCHANT_IDS"
@@ -71,7 +88,6 @@ done
 
 pull_data() {
   echo "Pulling data"
-  rm -rf "${SOURCES_DIR}" && mkdir -p "${SOURCES_DIR}"
   python -m acit.acit \
     "${customer_id_flags[@]}" \
     "${merchant_id_flags[@]}" \
@@ -82,67 +98,100 @@ pull_data() {
 
 run_pipeline() {
   echo "Running product pipeline"
-  rm -rf "${SINKS_DIR}" && mkdir -p "${SINKS_DIR}"
-  python -m acit.create_base_tables \
-    --output="${SINKS_DIR}/wide_products_table.jsonlines" \
-    --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
-    --source_dir="${SOURCES_DIR}" \
-    -- \
-    --runner=direct
+  if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
+    python -m build
+    python -m acit.create_base_tables \
+      --output="${SINKS_DIR}/wide_products_table.jsonlines" \
+      --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
+      --source_dir="${SOURCES_DIR}" \
+      -- \
+      --region "${DATAFLOW_REGION}" \
+      --runner DataflowRunner \
+      --project "${PROJECT_NAME}" \
+      --temp_location "${DATAFLOW_TEMP_LOCATION}" \
+      --extra_package ./dist/gtech_oneshop-*-py3-*-*.whl
+  else
+    rm -rf "${SINKS_DIR}" && mkdir -p "${SINKS_DIR}"
+    python -m acit.create_base_tables \
+      --output="${SINKS_DIR}/wide_products_table.jsonlines" \
+      --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
+      --source_dir="${SOURCES_DIR}" \
+      -- \
+      --runner=direct
+  fi
   echo "Product data saved to ${SINKS_DIR}"
 }
 
 upload_to_bq() {
   local -i ttl="$(( 60 * 60 * 24 * 60 ))"
 
-  rm -rf "${BQ_DIR}" && mkdir -p "${BQ_DIR}"
-  cat $(find "${SOURCES_DIR}" -type f | grep accounts) > "${BQ_DIR}/accounts.jsonlines"
-  if [[ "${ADMIN}" = true ]]; then
-    cat $(find "${SOURCES_DIR}" -type f | grep shippingsettings) > "${BQ_DIR}/shippingsettings.jsonlines"
-    cat $(find "${SINKS_DIR}" -type f | grep liasettings) > "${BQ_DIR}/liasettings.jsonlines"
+  # bq cli can load from wildcards, with limitations
+  if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
+    # BQ_DIR isn't used at all in this case
+    local accounts_path="${SOURCES_DIR}/merchant_center/*/accounts/rows.jsonlines"
+    if [[ "${ADMIN}" = true ]]; then
+      local shippingsettings_path="${SOURCES_DIR}/merchant_center/*/shippingsettings/rows.jsonlines"
+      local liasettings_path="${SINKS_DIR}/liasettings.jsonlines-*"
+    fi
+    local performance_path="${SOURCES_DIR}/ads/all/shopping_performance_view/*rows.jsonlines"
+    local language_path="${SOURCES_DIR}/ads/all/language_constant/*rows.jsonlines"
+    local products_path="${SINKS_DIR}/wide_products_table.jsonlines-*"
+  else
+    rm -rf "${BQ_DIR}" && mkdir -p "${BQ_DIR}"
+    local accounts_path="${BQ_DIR}/accounts.jsonlines"
+    cat $(find "${SOURCES_DIR}" -type f | grep accounts) > "${accounts_path}"
+    if [[ "${ADMIN}" = true ]]; then
+      local shippingsettings_path="${BQ_DIR}/shippingsettings.jsonlines"
+      cat $(find "${SOURCES_DIR}" -type f | grep shippingsettings) > "${shippingsettings_path}"
+      local liasettings_path="${BQ_DIR}/liasettings.jsonlines"
+      cat $(find "${SINKS_DIR}" -type f | grep liasettings) > "${liasettings_path}"
+    fi
+    local performance_path="${BQ_DIR}/performance.jsonlines"
+    cat $(find "${SOURCES_DIR}" -type f | grep performance) > "${performance_path}"
+    local language_path="${BQ_DIR}/language.jsonlines"
+    cat $(find "${SOURCES_DIR}" -type f | grep language) > "${language_path}"
+    local products_path="${BQ_DIR}/products.jsonlines"
+    cat $(find "${SINKS_DIR}" -type f | grep wide_products_table ) > "${products_path}"
   fi
-  cat $(find "${SOURCES_DIR}" -type f | grep performance) > "${BQ_DIR}/performance.jsonlines"
-  cat $(find "${SOURCES_DIR}" -type f | grep language) > "${BQ_DIR}/language.jsonlines"
-  cat $(find "${SINKS_DIR}" -type f | grep wide_products_table ) > "${BQ_DIR}/products.jsonlines"
   BQ_FLAGS_BASE="--location=${DATASET_LOCATION} \
     --replace=true \
     --source_format=NEWLINE_DELIMITED_JSON"
 
   BQ_FLAGS="--autodetect ${BQ_FLAGS_BASE}"
 
-  bq load $BQ_FLAGS \
+  bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.accounts" \
-    "${BQ_DIR}/accounts.jsonlines" \
+    "${accounts_path}" \
     acit/schemas/acit/accounts.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.accounts"
 
   if [[ "${ADMIN}" = true ]]; then
     bq load $BQ_FLAGS \
       "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings" \
-      "${BQ_DIR}/shippingsettings.jsonlines"
+      "${shippingsettings_path}"
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings"
 
     bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.liasettings" \
-      "${BQ_DIR}/liasettings.jsonlines" \
+      "${liasettings_path}" \
       acit/api/v0/storage/liasettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.liasettings"
   fi
 
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.performance" \
-    "${BQ_DIR}/performance.jsonlines" \
+    "${performance_path}" \
     acit/schemas/acit/performance.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.performance"
 
   bq load $BQ_FLAGS \
     "${PROJECT_NAME}:${DATASET_NAME}.language" \
-    "${BQ_DIR}/language.jsonlines"
+    "${language_path}"
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.language"
 
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.products" \
-    "${BQ_DIR}/products.jsonlines" \
+    "${products_path}" \
     acit/api/v0/storage/Products.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.products"
 }

@@ -57,6 +57,33 @@
                 "name": "effectiveAllowPriceUpdates",
                 "type": "BOOLEAN",
                 "mode": "NULLABLE"
+              },
+              {
+                "name": "accountItemUpdatesSettings",
+                "type": "RECORD",
+                "mode": "NULLABLE",
+		"fields": [
+		  {
+                    "name": "allowPriceUpdates",
+		    "type": "BOOLEAN",
+		    "mode": "NULLABLE"
+		  },
+		  {
+                    "name": "allowAvailabilityUpdates",
+		    "type": "BOOLEAN",
+		    "mode": "NULLABLE"
+		  },
+		  {
+                    "name": "allowStrictAvailabilityUpdates",
+		    "type": "BOOLEAN",
+		    "mode": "NULLABLE"
+		  },
+		  {
+                    "name": "allowConditionUpdates",
+		    "type": "BOOLEAN",
+		    "mode": "NULLABLE"
+                  }
+		]
               }
             ]
           }
@@ -223,7 +250,7 @@
             "fields": [
               {
                 "name": "postalCode",
-                "type": "INTEGER",
+                "type": "STRING",
                 "mode": "NULLABLE"
               },
               {
@@ -377,6 +404,28 @@
         ]
       },
       {
+        "name": "googleMyBusinessLink",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "gmbEmail",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "gmbAccountId",
+            "type": "FLOAT",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      {
         "name": "users",
         "type": "RECORD",
         "mode": "REPEATED",
@@ -423,6 +472,11 @@
       {
         "name": "id",
         "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "websiteUrl",
+        "type": "STRING",
         "mode": "NULLABLE"
       },
       {
