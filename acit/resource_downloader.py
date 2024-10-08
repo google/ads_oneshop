@@ -78,6 +78,8 @@ _RESULT_PATH = flags.DEFINE_string(
 
 METADATA_KEY = 'downloaderMetadata'
 
+_NUM_RETRIES = 3
+
 
 def _substitute(params: Dict[str, Any], substitutions: Dict[str, Any]):
   copy: Dict[str, Any] = {}
@@ -105,11 +107,11 @@ def get_results(
 ):
   request = getattr(collection(), resource_method)(**params)
   if is_scalar:
-    yield request.execute()
+    yield request.execute(num_retries=_NUM_RETRIES)
     return
 
   while request:
-    response = request.execute()
+    response = request.execute(num_retries=_NUM_RETRIES)
     for result in response.get(result_path, []):
       result[METADATA_KEY] = metadata or {}
       yield result
