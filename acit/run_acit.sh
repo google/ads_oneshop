@@ -155,7 +155,8 @@ upload_to_bq() {
   fi
   BQ_FLAGS_BASE="--location=${DATASET_LOCATION} \
     --replace=true \
-    --source_format=NEWLINE_DELIMITED_JSON"
+    --source_format=NEWLINE_DELIMITED_JSON \
+    --ignore_unknown_values"
 
   BQ_FLAGS="--autodetect ${BQ_FLAGS_BASE}"
 
