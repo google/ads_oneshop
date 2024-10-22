@@ -18,6 +18,7 @@ dependencies = [
   'etils[epath-gcs]',
   'google-cloud-secret-manager',
   'PyYAML',
+  'google-crc32c',
 ]
 
 [build-system]
