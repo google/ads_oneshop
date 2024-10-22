@@ -490,12 +490,64 @@
         "mode": "NULLABLE",
         "fields": [
           {
+            "name": "phoneVerificationStatus",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "phoneNumber",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "customerService",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+              {
+                "name": "phoneNumber",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
+                "name": "email",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
+                "name": "url",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              }
+            ]
+          },
+          {
             "name": "address",
             "type": "RECORD",
             "mode": "NULLABLE",
             "fields": [
               {
+                "name": "postalCode",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
+                "name": "region",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
+                "name": "locality",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
                 "name": "country",
+                "type": "STRING",
+                "mode": "NULLABLE"
+              },
+              {
+                "name": "streetAddress",
                 "type": "STRING",
                 "mode": "NULLABLE"
               }
