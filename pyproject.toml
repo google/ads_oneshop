@@ -16,6 +16,8 @@ dependencies = [
   'pyarrow-hotfix',
   'protobuf',
   'etils[epath-gcs]',
+  'google-cloud-secret-manager',
+  'PyYAML',
 ]
 
 [build-system]
