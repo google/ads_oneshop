@@ -12,7 +12,7 @@ dependencies = [
   'google-cloud-storage',
   'six',
   'absl-py',
-  'apache-beam',
+  'apache-beam[gcp]',
   'pyarrow-hotfix',
   'protobuf',
   'etils[epath-gcs]',

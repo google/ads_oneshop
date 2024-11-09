@@ -16,14 +16,41 @@
 Stores client ID, client secret, and Google Ads developer token in Secret
 Manager.
 
-Loads secrets from a known config file, which should *not* be checked into
+Loads secrets from known config files, which should *not* be checked into
 version control.
 """
 
+from collections.abc import Sequence
 import dataclasses
 
+from absl import app
+from absl import flags
+from absl import logging
+from acit import secret
+from acit.auth import oauth
 from etils import epath
 import yaml
+
+_CLIENT_SECRETS_PATH = epath.DEFINE_path(
+    'client_secrets_path',
+    'client_secrets.json',
+    'The path to the client secrets file',
+)
+_DEVELOPER_TOKEN_PATH = epath.DEFINE_path(
+    'developer_token_path',
+    'google_ads_developer_token.txt',
+    'The path to the Google Ads developer token file.',
+)
+_REFRESH_TOKEN_PATH = epath.DEFINE_path(
+    'refresh_token_path',
+    'refresh_token.txt',
+    'The path to the OAuth refresh token file.',
+)
+_REFRESH_TOKEN_SECRET_NAME = flags.DEFINE_string(
+    'refresh_token_secret_name',
+    'google_ads_refresh_token',
+    'The name of the refresh token secret to save',
+)
 
 
 @dataclasses.dataclass
@@ -71,3 +98,47 @@ def load_application_secrets(config_file: epath.Path) -> ApplicationSecrets:
       'Invalid format for config file. '
       'client_id, client_secret, and developer_token are required.'
   )
+
+
+def store_application_secrets(
+    client_secrets_path: epath.Path,
+    developer_token_path: epath.Path,
+    refresh_token_path: epath.Path,
+    refresh_token_secret_name: str = 'google_ads_refresh_token',
+) -> None:
+  """Stores application secrets.
+
+  Args:
+    client_secrets_path: The path to the client secrets file.
+    developer_token_path: The path to the developer token file.
+    refresh_token_path: The path to the refresh token file.
+    refresh_token_secret_name: The optional name for the refresh token secret.
+        useful for multitenant deployments.
+  """
+  secrets = oauth.get_secrets_dict(str(client_secrets_path))
+  client_id, client_secret = oauth.get_client_id_and_secret(secrets)
+  with refresh_token_path.open() as f:
+    refresh_token = f.read().strip()
+  with developer_token_path.open() as f:
+    developer_token = f.read().strip()
+  manager = secret.SecretsManager.create_default()
+  manager.store_secrets(client_id, 'google_ads_client_id')
+  manager.store_secrets(client_secret, 'google_ads_client_secret')
+  manager.store_secrets(developer_token, 'google_ads_developer_token')
+  manager.store_secrets(refresh_token, refresh_token_secret_name)
+
+
+def main(argv: Sequence[str]):
+  if len(argv) > 1:
+    raise app.UsageError('Too many command-line arguments.')
+  store_application_secrets(
+      client_secrets_path=_CLIENT_SECRETS_PATH.value,
+      developer_token_path=_DEVELOPER_TOKEN_PATH.value,
+      refresh_token_path=_REFRESH_TOKEN_PATH.value,
+      refresh_token_secret_name=_REFRESH_TOKEN_SECRET_NAME.value,
+  )
+  logging.info('Updated application secrets.')
+
+
+if __name__ == '__main__':
+  app.run(main)

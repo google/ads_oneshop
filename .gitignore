@@ -21,3 +21,6 @@ gen_bq_schema/
 *_pb2.py*
 dist/
 acit/api/**/*.schema
+client_secrets.json
+refresh_token.txt
+google_ads_developer_token.txt

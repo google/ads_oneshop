@@ -95,6 +95,7 @@ def get_children_query(mode: QueryMode = QueryMode.LEAVES):
   if mode == QueryMode.MCCS:
     clause = 'AND customer_client.manager = true'
 
+  # TODO: b/378921053 - Add flag for 'CLOSED' accounts (like test MCC leaves)
   return textwrap.dedent(
       f"""\
   SELECT

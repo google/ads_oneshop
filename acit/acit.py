@@ -13,30 +13,24 @@
 # limitations under the License.
 """Main ACIT data downloader."""
 
+from concurrent import futures
+import json
+import multiprocessing as mp
+import os
+import sys
+from typing import Set, Any
+
 from absl import app
 from absl import flags
 from absl import logging
-
 from acit import gaql
 from acit import resource_downloader
-
 from etils import epath
-
 from google.ads.googleads import client
-
+from google.oauth2 import credentials
 from googleapiclient import discovery
 from googleapiclient import http
 
-import google.auth
-
-import os
-import json
-from concurrent import futures
-import multiprocessing as mp
-
-import sys
-
-from typing import Set, Any
 
 if sys.version_info < (3, 9, 0):
   # Required for union operators
@@ -44,6 +38,7 @@ if sys.version_info < (3, 9, 0):
 
 ADS_API_VERSION = 'v17'
 
+_OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 
 _CUSTOMER_IDS = flags.DEFINE_multi_string(
     'customer_id',
@@ -252,11 +247,25 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
 
 
 def _get_merchant_center_api() -> Any:
-  # Technically, we already had creds from Ads. This is duplicative.
-  #   In a perfect world, we use something like Secret Manager to retrieve
-  #   OAuth client creds, Ads Dev tokens, and refresh tokens by account id.
-  #   See https://developers.google.com/identity/protocols/oauth2/policies
-  creds, _ = google.auth.default()
+  """Get Merchant Center API client. Factory.
+
+  Reuses API credentials from Google Ads.
+
+  Returns:
+    The Merchant Center API client.
+  """
+
+  refresh_token = os.environ.get('GOOGLE_ADS_REFRESH_TOKEN')
+  client_id = os.environ.get('GOOGLE_ADS_CLIENT_ID')
+  client_secret = os.environ.get('GOOGLE_ADS_CLIENT_SECRET')
+  creds = credentials.Credentials(
+      token=None,
+      refresh_token=refresh_token,
+      token_uri=_OAUTH_TOKEN_ENDPOINT,
+      client_id=client_id,
+      client_secret=client_secret,
+  )
+
   merchant_api = discovery.build('content', 'v2.1', credentials=creds)
   return merchant_api
 
@@ -268,7 +277,6 @@ def _pull_standalone_account_resource(
   logging.info('...pulling standalone account-level resource %s...' % resource)
   output_file = (
       epath.Path(acit_mc_output_dir)
-      / acit_mc_output_dir
       / account_id
       / resource
       / 'rows.jsonlines'
@@ -335,7 +343,7 @@ def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
 
 def main(_):
   if _VALIDATE_ONLY.value:
-    ads_client = client.GoogleAdsClient.load_from_storage(
+    ads_client = client.GoogleAdsClient.load_from_env(
         version=ADS_API_VERSION
     )
     customer_id = next(iter(_CUSTOMER_IDS.value))
@@ -377,7 +385,7 @@ def main(_):
   ]
   for customer_id in _CUSTOMER_IDS.value:
     logging.info('Processing Customer ID %s' % customer_id)
-    ads_client = client.GoogleAdsClient.load_from_storage(
+    ads_client = client.GoogleAdsClient.load_from_env(
         version=ADS_API_VERSION
     )
     ads_client.login_customer_id = customer_id
