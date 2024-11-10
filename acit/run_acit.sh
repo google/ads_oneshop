@@ -15,6 +15,7 @@
 
 
 set -e
+set -x
 
 if [[ -z "$CUSTOMER_IDS" ]]; then
     echo '$CUSTOMER_IDS is required. Comma-delimited.' 1>&2
@@ -63,9 +64,19 @@ if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
     echo '$DATAFLOW_REGION is required when using the dataflow runner.' 1>&2
     exit 1
   fi
+  if [[ -z "${DATAFLOW_SERVICE_ACCOUNT}" ]]; then
+    echo '$DATAFLOW_SERVICE_ACCOUNT is required when using the dataflow runner.' 1>&2
+    exit 1
+  fi
+  if [[ -z "${IMAGES_REPO}" ]]; then
+    echo '$IMAGES_REPO is required when using the dataflow runner.' 1>&2
+    exit 1
+  fi
 fi
 
 DEFAULT_RUN_ID="$(date -Iseconds)"
+
+# TODO: Add optional flag for skipping download
 
 RUN_ID="${RUN_ID:-${DEFAULT_RUN_ID}}"
 
@@ -99,17 +110,18 @@ pull_data() {
 run_pipeline() {
   echo "Running product pipeline"
   if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
-    python -m build
     python -m acit.create_base_tables \
       --output="${SINKS_DIR}/wide_products_table.jsonlines" \
       --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
       --source_dir="${SOURCES_DIR}" \
       -- \
+      --service_account_email="${DATAFLOW_SERVICE_ACCOUNT}" \
       --region "${DATAFLOW_REGION}" \
       --runner DataflowRunner \
       --project "${PROJECT_NAME}" \
       --temp_location "${DATAFLOW_TEMP_LOCATION}" \
-      --extra_package ./dist/gtech_oneshop-*-py3-*-*.whl
+      --sdk_container_image="${DATAFLOW_REGION}-docker.pkg.dev/${PROJECT_NAME}/${IMAGES_REPO}/dataflow:latest" \
+      --sdk_location=container
   else
     rm -rf "${SINKS_DIR}" && mkdir -p "${SINKS_DIR}"
     python -m acit.create_base_tables \
@@ -160,6 +172,9 @@ upload_to_bq() {
 
   BQ_FLAGS="--autodetect ${BQ_FLAGS_BASE}"
 
+  # Create the dataset if it doesn't exist yet
+  bq --location "${DATASET_LOCATION}" mk --dataset -f "${DATASET_NAME}"
+
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.accounts" \
     "${accounts_path}" \
@@ -170,6 +185,7 @@ upload_to_bq() {
     bq load $BQ_FLAGS \
       "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings" \
       "${shippingsettings_path}"
+    # TODO: Add schema for shippingsettings
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings"
 
     bq load $BQ_FLAGS_BASE \
@@ -203,7 +219,15 @@ create_views() {
   bq query $BQ_FLAGS_BASE < <(envsubst < acit/views/disapprovals_view.sql)
 }
 
+run_extensions() {
+  RUN_MERCHANT_EXCELLENCE="${RUN_MERCHANT_EXCELLENCE:-false}"
+  if [[ "${RUN_MERCHANT_EXCELLENCE}" = 'true' ]]; then
+    extensions/merchant_excellence/run_mex.sh
+  fi
+}
+
 pull_data
 run_pipeline
 upload_to_bq
 create_views
+run_extensions
