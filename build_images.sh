@@ -45,7 +45,7 @@ export BUILD_TAG_BASE="${DATAFLOW_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}
 
 function build_images() {
         rm -f image_sources.tar image_sources.tar.gz
-        tar cvf image_sources.tar --exclude-vcs --exclude-vcs-ignores --exclude='./extensions' .
+        tar cvf image_sources.tar --exclude-vcs --exclude-vcs-ignores .
 
         # TODO: Parameterize Python and Beam SDK version (currently 3.11/2.60.0)
         # TODO: Build the bdist/wheel once in a base container
