@@ -55,9 +55,36 @@ WITH
   ),
   AccountLevelShipping AS (
     SELECT DISTINCT
-      S.settings.accountId AS merchant_id,
-      ARRAY_LENGTH(S.settings.services) > 0 AS has_account_level_shipping
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS S
+      settings.accountId AS merchant_id,
+      ARRAY_LENGTH(settings.services) > 0 AS has_account_level_shipping,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+      ) AS has_account_level_shipping_speed,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxTransitTimeInDays + deliveryTime.maxHandlingTimeInDays <= 3
+      ) AS has_account_level_fast_shipping,
+      EXISTS(
+        SELECT *
+        FROM
+          SS.settings.services AS SVC,
+          SVC.rateGroups AS RG,
+          RG.mainTable.rows AS RS,
+          RS.cells AS C
+        WHERE
+          C.flatRate.value = 0
+      ) AS has_account_level_free_shipping
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS
   ),
   EnabledDestinations AS (
     SELECT DISTINCT
@@ -67,11 +94,6 @@ WITH
         FROM P.status.destination_statuses
         WHERE destination = 'SurfacesAcrossGoogle'
       ) AS has_free_listings_enabled,
-      EXISTS(
-        SELECT 1
-        FROM P.status.destination_statuses
-        WHERE destination = 'DisplayAds'
-      ) AS has_dynamic_remarketing_enabled,
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.products AS P,
       P.status.destination_statuses AS DS
@@ -109,7 +131,9 @@ WITH
       L.lia_has_odo_implemented,
       ALS.has_account_level_shipping,
       ED.has_free_listings_enabled,
-      ED.has_dynamic_remarketing_enabled
+      ALS.has_account_level_shipping_speed,
+      ALS.has_account_level_fast_shipping,
+      ALS.has_account_level_free_shipping
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A,
       A.children AS C
@@ -120,20 +144,11 @@ WITH
     LEFT JOIN EnabledDestinations AS ED
       ON ED.merchant_id = C.id
   ),
-  HasDynamicRemarketing AS (
-    SELECT DISTINCT
-      merchant_id,
-      aggregator_id,
-      'has Dynamic Remarketing enabled' AS metric_name,
-      'dynamic remarketing not enabled' AS data_quality_flag,
-    FROM Account
-    WHERE NOT has_dynamic_remarketing_enabled
-  ),
   HasFreeListings AS (
     SELECT DISTINCT
       merchant_id,
       aggregator_id,
-      'has Free Listings enabledd' AS metric_name,
+      'has Free Listings enabled' AS metric_name,
       'free listings not enabled' AS data_quality_flag,
     FROM Account
     WHERE NOT has_free_listings_enabled
@@ -201,9 +216,34 @@ WITH
     FROM Account
     WHERE NOT has_account_level_shipping
   ),
+  AccountLevelShippingSpeed AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      'uses account-level shipping speed' AS metric_name,
+      'account-level shipping speed not implemented' AS data_quality_flag,
+    FROM Account
+    WHERE NOT has_account_level_shipping_speed
+  ),
+  AccountLevelFreeShipping AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      'uses account-level free shipping' AS metric_name,
+      'account-level free shipping not implemented' AS data_quality_flag,
+    FROM Account
+    WHERE NOT has_account_level_free_shipping
+  ),
+  AccountLevelFastShipping AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      'uses account-level fast shipping' AS metric_name,
+      'account-level fast shipping not implemented' AS data_quality_flag,
+    FROM Account
+    WHERE NOT has_account_level_fast_shipping
+  ),
   AllMetrics AS (
-    SELECT * FROM HasDynamicRemarketing
-    UNION ALL
     SELECT * FROM HasFreeListings
     UNION ALL
     SELECT * FROM ImageAiu
@@ -217,6 +257,12 @@ WITH
     SELECT * FROM StorePickupImplemented
     UNION ALL
     SELECT * FROM AccountLevelShippingImplemented
+    UNION ALL
+    SELECT * FROM AccountLevelShippingSpeed
+    UNION ALL
+    SELECT * FROM AccountLevelFreeShipping
+    UNION ALL
+    SELECT * FROM AccountLevelFastShipping
     UNION ALL
     SELECT * FROM OnDisplayToOrderImplemented
   )

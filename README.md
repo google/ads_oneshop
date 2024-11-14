@@ -64,11 +64,8 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
 ### MEX Deployment
 
 *   Download and save the benchmark files.
-    *   [benchmark_details.json](benchmark/benchmark_details.json)
-    *   [benchmark_values.json](benchmark/benchmark_values.json)
-*   From within Cloud Shell, run commands to make them JSON newline delimited
-    *   `cat benchmark_details.json | jq -c '.[]' > details.json`
-    *   `cat benchmark_values.json | jq -c '.[]' > values.json`
+    *   [benchmark_details.csv](benchmark/benchmark_details.csv)
+    *   [benchmark_values.csv](benchmark/benchmark_values.csv)
 *   Go to BigQuery in GCP and click on the dataset's 3 dot menu
 
 <img src="images/create_table.png">
@@ -79,7 +76,7 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     *   MEX_benchmark_values
 *   (Repeat the example below for the values file as well)
 
-<img src="images/create_table2.png">
+<img src="images/create_table_2.png">
 
 *   After the files have been uploaded successfully, verify that those tables
     have been created.
@@ -94,5 +91,5 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     [public group](https://groups.google.com/g/ads-oneshop) as pointed out
     previously.
 *   Copy the
-    [template](https://lookerstudio.google.com/c/u/0/reporting/c9b47c32-f5b8-4ad5-a59f-495b0e58dbc8/page/ 2RkaD)
+    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD)
 *   Update data sources to use BQ dataset.

@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS ${PROJECT_NAME}.${DATASET_NAME}.MEX_All_Metrics_histo
   OPTIONS (
     partition_expiration_days = 60.0);
 
-
 CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
   OPTIONS (
     expiration_timestamp = TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 10 MINUTE))
@@ -89,9 +88,36 @@ WITH
   ),
   AccountLevelShipping AS (
     SELECT DISTINCT
-      S.settings.accountId AS merchant_id,
-      ARRAY_LENGTH(S.settings.services) > 0 AS has_account_level_shipping
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS S
+      settings.accountId AS merchant_id,
+      ARRAY_LENGTH(settings.services) > 0 AS has_account_level_shipping,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+      ) AS has_account_level_shipping_speed,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxTransitTimeInDays + deliveryTime.maxHandlingTimeInDays <= 3
+      ) AS has_account_level_fast_shipping,
+      EXISTS(
+        SELECT *
+        FROM
+          SS.settings.services AS SVC,
+          SVC.rateGroups AS RG,
+          RG.mainTable.rows AS RS,
+          RS.cells AS C
+        WHERE
+          C.flatRate.value = 0
+      ) AS has_account_level_free_shipping
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS
 ),
   Account AS (
     SELECT DISTINCT
@@ -113,7 +139,10 @@ WITH
       L.lia_has_mhlsf_implemented,
       L.lia_has_store_pickup_implemented,
       L.lia_has_odo_implemented,
-      ALS.has_account_level_shipping
+      ALS.has_account_level_shipping,
+      ALS.has_account_level_shipping_speed,
+      ALS.has_account_level_fast_shipping,
+      ALS.has_account_level_free_shipping
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A,
       A.children AS C
@@ -151,11 +180,6 @@ WITH
         FROM P.status.destination_statuses
         WHERE destination = 'SurfacesAcrossGoogle'
       ) AS has_free_listings_enabled,
-      EXISTS(
-        SELECT 1
-        FROM P.status.destination_statuses
-        WHERE destination = 'DisplayAds'
-      ) AS has_dynamic_remarketing_enabled,
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.products AS P,
       P.status.destination_statuses AS DS
@@ -174,11 +198,10 @@ WITH
             AS x
       ) AS targeted_countries,
       DS AS destination_statuses,
-      ED.has_free_listings_enabled,
-      ED.has_dynamic_remarketing_enabled
+      ED.has_free_listings_enabled
     FROM ${PROJECT_NAME}.${DATASET_NAME}.products AS P
     LEFT JOIN P.status.destination_statuses AS DS
-    INNER JOIN EnabledDestinations AS ED
+    LEFT JOIN EnabledDestinations AS ED
       ON ED.product_id = P.offer_id
     WHERE DS.destination = 'Shopping'
   ),
@@ -210,8 +233,7 @@ WITH
         WHERE disapproved_country = targeted_country
       ) AS is_disapproved,
       II.item_issues,
-      PS.has_free_listings_enabled,
-      PS.has_dynamic_remarketing_enabled
+      PS.has_free_listings_enabled
     FROM ProductStatus AS PS, PS.targeted_countries AS targeted_country
     LEFT JOIN ItemIssues AS II
       ON
@@ -227,7 +249,6 @@ SELECT
   PSC.is_disapproved,
   PSC.item_issues,
   PSC.has_free_listings_enabled,
-  PSC.has_dynamic_remarketing_enabled,
   P.product.offer_id AS item_id,
   IFNULL(P.product.brand, '') AS brand,
   IFNULL(P.product.custom_label0, '') AS custom_label_0,
@@ -249,12 +270,14 @@ SELECT
   P.product.gender,
   P.product.sizes,
   P.product.additional_image_links,
+  P.product.lifestyle_image_links,
   P.product.sale_price,
   P.product.item_group_id,
   P.product.product_types,
   P.product.product_highlights,
   P.product.source,
   P.product.shipping,
+  P.product.cost_of_goods_sold,
   (P.has_shopping_targeting OR P.has_performance_max_targeting) AS has_targeting,
   IFNULL(AD.impressions_last30days, 0) > 0 AS had_impressions,
   IFNULL(AD.clicks_last30days, 0) > 0 AS had_clicks,
@@ -264,7 +287,10 @@ SELECT
   AC.lia_has_mhlsf_implemented,
   AC.lia_has_store_pickup_implemented,
   AC.lia_has_odo_implemented,
-  AC.has_account_level_shipping
+  AC.has_account_level_shipping,
+  AC.has_account_level_shipping_speed,
+  AC.has_account_level_fast_shipping,
+  AC.has_account_level_free_shipping
 FROM ProductStatusCountry AS PSC
 INNER JOIN ${PROJECT_NAME}.${DATASET_NAME}.products AS P
   ON
@@ -638,8 +664,6 @@ WITH
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
-      -- TODO: check if this logic works for offers without Sizes
-      -- Currently all offers in this test feed have the attribute
       ARRAY_LENGTH(sizes) > 0
     GROUP BY
       merchant_id,
@@ -656,7 +680,7 @@ WITH
       brand,
       metric_name
   ),
-  OffersWithAdditionalImages AS (
+  OffersWith3AdditionalImages AS (
     SELECT
       merchant_id,
       channel,
@@ -670,11 +694,45 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      '% items with additional images' AS metric_name,
+      '% items with 3 or more additional images' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
-      ARRAY_LENGTH(additional_image_links) > 0
+      ARRAY_LENGTH(additional_image_links) > 2
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  OffersWithLifestyleImages AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      '% items with lifestyle image' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
+    WHERE
+      ARRAY_LENGTH(lifestyle_image_links) > 0
     GROUP BY
       merchant_id,
       channel,
@@ -1037,7 +1095,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      '% targeted offers' AS metric_name,
+      '% targeted items' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
@@ -1071,45 +1129,11 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      '% items with product highlight' AS metric_name,
+      '% items with product highlight attributes' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
       ARRAY_LENGTH(product_highlights) > 0
-    GROUP BY
-      merchant_id,
-      channel,
-      targeted_country,
-      product_type_lvl1,
-      product_type_lvl2,
-      product_type_lvl3,
-      custom_label_0,
-      custom_label_1,
-      custom_label_2,
-      custom_label_3,
-      custom_label_4,
-      brand,
-      metric_name
-  ),
-  HasDynamicRemarketing AS (
-    SELECT
-      merchant_id,
-      channel,
-      targeted_country,
-      product_type_lvl1,
-      product_type_lvl2,
-      product_type_lvl3,
-      custom_label_0,
-      custom_label_1,
-      custom_label_2,
-      custom_label_3,
-      custom_label_4,
-      brand,
-      'has Dynamic Remarketing enabled' AS metric_name,
-      1 AS metric_value
-    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
-    WHERE
-      has_dynamic_remarketing_enabled
     GROUP BY
       merchant_id,
       channel,
@@ -1159,7 +1183,7 @@ WITH
       brand,
       metric_name
   ),
-  OffersWithPriceAvailabilityAIU AS (
+  OffersWithPriceAvailabilityConditionAIU AS (
     SELECT
       merchant_id,
       channel,
@@ -1173,7 +1197,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      '% items with price/availability AIU' AS metric_name,
+      '% items with price / availability / condition AIU' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
@@ -1181,6 +1205,44 @@ WITH
         SELECT 1
         FROM UNNEST(item_issues) AS e
         WHERE e LIKE '%Automatic item updates active%'
+      )
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  LiaItemsWithNoInventory AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      'LIA: % items disapproved for missing inventory' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
+    WHERE
+      EXISTS(
+        SELECT 1
+        FROM UNNEST(item_issues) AS e
+        WHERE e = 'Missing inventory data'
       )
     GROUP BY
       merchant_id,
@@ -1211,7 +1273,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      'LIA: % approved offers' AS metric_name,
+      'LIA: % approved items' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
@@ -1280,11 +1342,135 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      '% items with shipping attribute' AS metric_name,
+      '% items with shipping' AS metric_name,
       COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
-      ARRAY_LENGTH(shipping) > 0
+      ARRAY_LENGTH(shipping) > 0 OR (has_account_level_shipping AND ARRAY_LENGTH(shipping) = 0)
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  OffersWithShippingSpeed AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      '% items with shipping speed' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products AS TP
+    WHERE
+      EXISTS(
+        SELECT *
+        FROM TP.shipping
+        WHERE
+          min_handling_time IS NOT NULL
+          AND max_handling_time IS NOT NULL
+          AND min_transit_time IS NOT NULL
+          AND max_transit_time IS NOT NULL
+      )
+      OR (has_account_level_shipping_speed AND ARRAY_LENGTH(shipping) = 0)
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  OffersWithFastShipping AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      '% items with fast shipping option' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products AS TP
+    WHERE
+      EXISTS(
+        SELECT *
+        FROM TP.shipping
+        WHERE
+          max_handling_time IS NOT NULL
+          AND max_transit_time IS NOT NULL
+          AND max_handling_time + max_transit_time <= 3
+      )
+      OR (has_account_level_fast_shipping AND ARRAY_LENGTH(shipping) = 0)
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  OffersWithFreeShipping AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      '% items with free shipping' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products AS TP
+    WHERE
+      EXISTS(
+        SELECT *
+        FROM TP.shipping
+        WHERE CAST(price.value AS FLOAT64) = 0
+      )
+      OR (has_account_level_free_shipping AND ARRAY_LENGTH(shipping) = 0)
     GROUP BY
       merchant_id,
       channel,
@@ -1504,7 +1690,58 @@ WITH
       brand,
       metric_name
   ),
-  AccountLevelShippingImplemented AS (
+  RawDuplicateTitles AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      SPLIT(product_id, ':')[SAFE_OFFSET(1)] AS language_code,
+      title,
+      COUNT(*) AS duplicate_title_count
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
+    GROUP BY 1, 2, 3, 4, 5
+  ),
+  ItemsWithDuplicateTitles AS (
+    SELECT
+      T.merchant_id,
+      T.channel,
+      T.targeted_country,
+      T.product_type_lvl1,
+      T.product_type_lvl2,
+      T.product_type_lvl3,
+      T.custom_label_0,
+      T.custom_label_1,
+      T.custom_label_2,
+      T.custom_label_3,
+      T.custom_label_4,
+      T.brand,
+      '% items with duplicate titles' AS metric_name,
+      COUNT(*) AS metric_value
+    FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products AS T
+    INNER JOIN RawDuplicateTitles AS DT
+      ON
+        DT.merchant_id = T.merchant_id
+        AND DT.channel = T.channel
+        AND DT.targeted_country = T.targeted_country
+        AND DT.language_code = SPLIT(T.product_id, ':')[SAFE_OFFSET(1)]
+        AND DT.title = T.title
+    WHERE DT.duplicate_title_count > 1
+    GROUP BY
+      merchant_id,
+      channel,
+      targeted_country,
+      product_type_lvl1,
+      product_type_lvl2,
+      product_type_lvl3,
+      custom_label_0,
+      custom_label_1,
+      custom_label_2,
+      custom_label_3,
+      custom_label_4,
+      brand,
+      metric_name
+  ),
+  ItemsWithCostOfGoodsSold AS (
     SELECT
       merchant_id,
       channel,
@@ -1518,11 +1755,10 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      'uses account-level shipping settings' AS metric_name,
-      1 AS metric_value
+      '% items with cost_of_goods_sold' AS metric_name,
+      COUNT(*) AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
-    WHERE
-      has_account_level_shipping
+    WHERE CAST(cost_of_goods_sold.value AS FLOAT64) > 0
     GROUP BY
       merchant_id,
       channel,
@@ -1557,7 +1793,7 @@ WITH
     UNION ALL
     SELECT * FROM OffersWithSize
     UNION ALL
-    SELECT * FROM OffersWithAdditionalImages
+    SELECT * FROM OffersWith3AdditionalImages
     UNION ALL
     SELECT * FROM OffersWithCustomLabel
     UNION ALL
@@ -1581,17 +1817,23 @@ WITH
     UNION ALL
     SELECT * FROM OffersWithProductHighlights
     UNION ALL
-    SELECT * FROM HasDynamicRemarketing
-    UNION ALL
     SELECT * FROM HasFreeListings
     UNION ALL
-    SELECT * FROM OffersWithPriceAvailabilityAIU
+    SELECT * FROM OffersWithPriceAvailabilityConditionAIU
+    UNION ALL
+    SELECT * FROM LiaItemsWithNoInventory
     UNION ALL
     SELECT * FROM LiaOffersApproved
     UNION ALL
     SELECT * FROM OffersUploadedViaApi
     UNION ALL
     SELECT * FROM OffersWithShipping
+    UNION ALL
+    SELECT * FROM OffersWithShippingSpeed
+    UNION ALL
+    SELECT * FROM OffersWithFastShipping
+    UNION ALL
+    SELECT * FROM OffersWithFreeShipping
     UNION ALL
     SELECT * FROM ImageAiu
     UNION ALL
@@ -1603,9 +1845,11 @@ WITH
     UNION ALL
     SELECT * FROM StorePickupImplemented
     UNION ALL
-    SELECT * FROM AccountLevelShippingImplemented
-    UNION ALL
     SELECT * FROM OnDisplayToOrderImplemented
+    UNION ALL
+    SELECT * FROM ItemsWithDuplicateTitles
+    UNION ALL
+    SELECT * FROM ItemsWithCostOfGoodsSold
   ),
   BenchmarksPerMerchant AS (
     SELECT * FROM MerchantIds, Benchmarks
@@ -1644,33 +1888,35 @@ SELECT
 FROM BenchmarksPerMerchant AS BM
 INNER JOIN
   TotalProducts AS TP
-  ON BM.merchant_id = TP.merchant_id
-  AND BM.channel = TP.channel
-  AND BM.targeted_country = TP.targeted_country
-  AND BM.product_type_lvl1 = TP.product_type_lvl1
-  AND BM.product_type_lvl2 = TP.product_type_lvl2
-  AND BM.product_type_lvl3 = TP.product_type_lvl3
-  AND BM.custom_label_0 = TP.custom_label_0
-  AND BM.custom_label_1 = TP.custom_label_1
-  AND BM.custom_label_2 = TP.custom_label_2
-  AND BM.custom_label_3 = TP.custom_label_3
-  AND BM.custom_label_4 = TP.custom_label_4
-  AND BM.brand = TP.brand
+  ON
+    BM.merchant_id = TP.merchant_id
+    AND BM.channel = TP.channel
+    AND BM.targeted_country = TP.targeted_country
+    AND BM.product_type_lvl1 = TP.product_type_lvl1
+    AND BM.product_type_lvl2 = TP.product_type_lvl2
+    AND BM.product_type_lvl3 = TP.product_type_lvl3
+    AND BM.custom_label_0 = TP.custom_label_0
+    AND BM.custom_label_1 = TP.custom_label_1
+    AND BM.custom_label_2 = TP.custom_label_2
+    AND BM.custom_label_3 = TP.custom_label_3
+    AND BM.custom_label_4 = TP.custom_label_4
+    AND BM.brand = TP.brand
 LEFT JOIN
   AllMetrics AS AM
-  ON BM.merchant_id = AM.merchant_id
-  AND BM.channel = AM.channel
-  AND BM.targeted_country = AM.targeted_country
-  AND BM.product_type_lvl1 = AM.product_type_lvl1
-  AND BM.product_type_lvl2 = AM.product_type_lvl2
-  AND BM.product_type_lvl3 = AM.product_type_lvl3
-  AND BM.custom_label_0 = AM.custom_label_0
-  AND BM.custom_label_1 = AM.custom_label_1
-  AND BM.custom_label_2 = AM.custom_label_2
-  AND BM.custom_label_3 = AM.custom_label_3
-  AND BM.custom_label_4 = AM.custom_label_4
-  AND BM.brand = AM.brand
-  AND BM.metric_name = AM.metric_name
+  ON
+    BM.merchant_id = AM.merchant_id
+    AND BM.channel = AM.channel
+    AND BM.targeted_country = AM.targeted_country
+    AND BM.product_type_lvl1 = AM.product_type_lvl1
+    AND BM.product_type_lvl2 = AM.product_type_lvl2
+    AND BM.product_type_lvl3 = AM.product_type_lvl3
+    AND BM.custom_label_0 = AM.custom_label_0
+    AND BM.custom_label_1 = AM.custom_label_1
+    AND BM.custom_label_2 = AM.custom_label_2
+    AND BM.custom_label_3 = AM.custom_label_3
+    AND BM.custom_label_4 = AM.custom_label_4
+    AND BM.brand = AM.brand
+    AND BM.metric_name = AM.metric_name
 LEFT JOIN
   AccountNames AS AN
   ON BM.merchant_id = AN.merchant_id;

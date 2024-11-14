@@ -1,0 +1,40 @@
+metric_name,benchmark,last_update
+% items disapproved,0.080,2024-07-30
+% items that have brand,0.850,2024-07-30
+% items that have gtin,0.850,2024-07-30
+% items with 3 or more additional images,0.500,2024-07-30
+% items with age group,0.800,2024-07-30
+% items with clicks,0.100,2024-07-30
+% items with color,0.450,2024-07-30
+% items with custom label,0.900,2024-07-30
+% items with description length >= 500,0.800,2024-07-30
+% items with gender,0.800,2024-07-30
+% items with generic image,0.000,2024-07-30
+% items with good product_type depth,0.750,2024-07-30
+% items with impressions,0.300,2024-07-30
+% items with invalid gtins,0.000,2024-07-30
+% items with item_group_id,0.350,2024-07-30
+% items with price / availability / condition AIU,0.005,2024-07-30
+% items with product highlight attributes,0.100,2024-07-30
+% items with robots.txt issue,0.000,2024-07-30
+% items with sale price,0.350,2024-07-30
+% items with shipping,0.900,2024-07-30
+% items with size,0.800,2024-07-30
+% items with title length >= 30,0.970,2024-07-30
+% targeted items,0.950,2024-07-30
+availability AIU enabled,1.000,2024-07-30
+has Free Listings enabled,1.000,2024-07-30
+has LIA implemented,1.000,2024-07-30
+image AIU enabled,1.000,2024-07-30
+LIA: % approved items,0.900,2024-07-30
+LIA: has MHLSF implemented,1.000,2024-07-30
+LIA: has Store Pickup implemented,1.000,2024-07-30
+LIA: On display to order implemented,1.000,2024-07-30
+products uploaded via API,1.000,2024-07-30
+% items with lifestyle image,0.050,2024-07-30
+LIA: % items disapproved for missing inventory,0.300,2024-07-30
+% items with shipping speed,0.350,2024-07-30
+% items with fast shipping option,0.050,2024-07-30
+% items with free shipping,0.650,2024-07-30
+% items with duplicate titles,0.250,2024-07-30
+% items with cost_of_goods_sold,0.050,2024-07-30

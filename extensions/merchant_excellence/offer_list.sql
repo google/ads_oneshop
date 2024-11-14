@@ -65,11 +65,6 @@ WITH
         FROM P.status.destination_statuses
         WHERE destination = 'SurfacesAcrossGoogle'
       ) AS has_free_listings_enabled,
-      EXISTS(
-        SELECT 1
-        FROM P.status.destination_statuses
-        WHERE destination = 'DisplayAds'
-      ) AS has_dynamic_remarketing_enabled,
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.products AS P,
       P.status.destination_statuses AS DS
@@ -89,10 +84,9 @@ WITH
       ) AS targeted_countries,
       DS AS destination_statuses,
       ED.has_free_listings_enabled,
-      ED.has_dynamic_remarketing_enabled
     FROM ${PROJECT_NAME}.${DATASET_NAME}.products AS P
     LEFT JOIN P.status.destination_statuses AS DS
-    INNER JOIN EnabledDestinations AS ED
+    LEFT JOIN EnabledDestinations AS ED
       ON ED.product_id = P.offer_id
     WHERE DS.destination = 'Shopping'
   ),
@@ -125,12 +119,44 @@ WITH
       ) AS is_disapproved,
       II.item_issues,
       PS.has_free_listings_enabled,
-      PS.has_dynamic_remarketing_enabled
     FROM ProductStatus AS PS, PS.targeted_countries AS targeted_country
     LEFT JOIN ItemIssues AS II
       ON
         II.product_id = PS.product_id
         AND II.country = targeted_country
+  ),
+  AccountLevelShipping AS (
+    SELECT DISTINCT
+      settings.accountId AS merchant_id,
+      ARRAY_LENGTH(settings.services) > 0 AS has_account_level_shipping,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minTransitTimeInDays IS NOT NULL
+          AND deliveryTime.minHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+      ) AS has_account_level_shipping_speed,
+      EXISTS(
+        SELECT *
+        FROM SS.settings.services
+        WHERE
+          deliveryTime.maxTransitTimeInDays IS NOT NULL
+          AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
+          AND deliveryTime.maxTransitTimeInDays + deliveryTime.maxHandlingTimeInDays <= 3
+      ) AS has_account_level_fast_shipping,
+      EXISTS(
+        SELECT *
+        FROM
+          SS.settings.services AS SVC,
+          SVC.rateGroups AS RG,
+          RG.mainTable.rows AS RS,
+          RS.cells AS C
+        WHERE
+          C.flatRate.value = 0
+      ) AS has_account_level_free_shipping
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS
   ),
   Products AS (
     SELECT
@@ -142,7 +168,6 @@ WITH
       PSC.is_disapproved,
       PSC.item_issues,
       PSC.has_free_listings_enabled,
-      PSC.has_dynamic_remarketing_enabled,
       P.product.offer_id AS item_id,
       P.product.content_language AS language,
       IFNULL(P.product.brand, '') AS brand,
@@ -171,9 +196,15 @@ WITH
       P.product.product_highlights,
       P.product.source,
       P.product.shipping,
+      P.product.lifestyle_image_links,
+      P.product.cost_of_goods_sold,
       (P.has_shopping_targeting OR P.has_performance_max_targeting) AS has_targeting,
       IFNULL(AD.impressions_last30days, 0) > 0 AS had_impressions,
-      IFNULL(AD.clicks_last30days, 0) > 0 AS had_clicks
+      IFNULL(AD.clicks_last30days, 0) > 0 AS had_clicks,
+      ALS.has_account_level_shipping,
+      ALS.has_account_level_shipping_speed,
+      ALS.has_account_level_fast_shipping,
+      ALS.has_account_level_free_shipping,
     FROM ProductStatusCountry AS PSC
     INNER JOIN ${PROJECT_NAME}.${DATASET_NAME}.products AS P
       ON
@@ -181,10 +212,12 @@ WITH
         AND P.offer_id = PSC.product_id
     LEFT JOIN AdsStats AS AD
       ON
-       CAST(AD.merchant_id AS INT64) = CAST(PSC.merchant_id AS INT64)
+        CAST(AD.merchant_id AS INT64) = CAST(PSC.merchant_id AS INT64)
         AND LOWER(AD.product_id) = LOWER(PSC.product_id)
     LEFT JOIN Account AS AC
       ON AC.merchant_id = PSC.merchant_id
+    LEFT JOIN AccountLevelShipping AS ALS
+      ON ALS.merchant_id = PSC.merchant_id
   ),
   DisapprovedOffers AS (
     SELECT DISTINCT
@@ -313,7 +346,7 @@ WITH
       -- Currently all offers in this test feed have the attribute
       ARRAY_LENGTH(IFNULL(sizes, [])) = 0
   ),
-  OffersWithAdditionalImages AS (
+  OffersWith3AdditionalImages AS (
     SELECT DISTINCT
       merchant_id,
       aggregator_id,
@@ -321,11 +354,11 @@ WITH
       item_id,
       targeted_country,
       language,
-      '% items with additional images' AS metric_name,
+      '% items with 3 or more additional images' AS metric_name,
       'no additional images' AS data_quality_flag,
     FROM Products
     WHERE
-      ARRAY_LENGTH(IFNULL(additional_image_links, [])) = 0
+      ARRAY_LENGTH(IFNULL(additional_image_links, [])) > 2
   ),
   OffersWithCustomLabel AS (
     SELECT DISTINCT
@@ -488,7 +521,7 @@ WITH
       item_id,
       targeted_country,
       language,
-      '% targeted offers' AS metric_name,
+      '% targeted items' AS metric_name,
       'not targeted' AS data_quality_flag,
     FROM Products
     WHERE
@@ -502,13 +535,13 @@ WITH
       item_id,
       targeted_country,
       language,
-      '% items with product highlight' AS metric_name,
+      '% items with product highlight attributes' AS metric_name,
       'no product highlight' AS data_quality_flag,
     FROM Products
     WHERE
       ARRAY_LENGTH(IFNULL(product_highlights, [])) = 0
   ),
-  OffersWithPriceAvailabilityAIU AS (
+  OffersWithPriceAvailabilityConditionAIU AS (
     SELECT DISTINCT
       merchant_id,
       aggregator_id,
@@ -516,8 +549,8 @@ WITH
       item_id,
       targeted_country,
       language,
-      '% items with price/availability AIU' AS metric_name,
-      'price/availability AIU active' AS data_quality_flag,
+      '% items with price / availability / condition AIU' AS metric_name,
+      'price/availability/condition AIU active' AS data_quality_flag,
     FROM Products
     WHERE
       EXISTS(
@@ -534,8 +567,8 @@ WITH
       item_id,
       targeted_country,
       language,
-      'LIA: % approved offers' AS metric_name,
-      'LIA offer disapproved' AS data_quality_flag,
+      'LIA: % approved items' AS metric_name,
+      'LIA item disapproved' AS data_quality_flag,
     FROM Products
     WHERE
       channel = 'local'
@@ -563,11 +596,160 @@ WITH
       item_id,
       targeted_country,
       language,
-      '% items with shipping attribute' AS metric_name,
+      '% items with shipping' AS metric_name,
       'no shipping attribute' AS data_quality_flag,
     FROM Products
     WHERE
       ARRAY_LENGTH(IFNULL(shipping, [])) = 0
+      AND NOT has_account_level_shipping
+  ),
+  OffersWithShippingSpeed AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      '% items with shipping speed' AS metric_name,
+      'no shipping speed attribute' AS data_quality_flag,
+    FROM Products AS P
+    WHERE
+      (
+        ARRAY_LENGTH(IFNULL(shipping, [])) > 0
+        AND NOT EXISTS(
+          SELECT *
+          FROM P.shipping
+          WHERE
+            min_handling_time IS NOT NULL
+            AND max_handling_time IS NOT NULL
+            AND min_transit_time IS NOT NULL
+            AND max_transit_time IS NOT NULL
+        ))
+      OR (
+        ARRAY_LENGTH(IFNULL(shipping, [])) = 0
+        AND NOT has_account_level_shipping_speed)
+  ),
+  OffersWithFastShipping AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      '% items with fast shipping option' AS metric_name,
+      'no fast shipping' AS data_quality_flag,
+    FROM Products AS P
+    WHERE
+      (
+        ARRAY_LENGTH(IFNULL(shipping, [])) > 0
+        AND NOT EXISTS(
+          SELECT *
+          FROM P.shipping
+          WHERE
+            max_handling_time IS NOT NULL
+            AND max_transit_time IS NOT NULL
+            AND max_handling_time + max_transit_time <= 3
+        ))
+      OR (
+        ARRAY_LENGTH(IFNULL(shipping, [])) = 0
+        AND NOT has_account_level_fast_shipping)
+  ),
+  OffersWithFreeShipping AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      '% items with free shipping' AS metric_name,
+      'no free shipping' AS data_quality_flag,
+    FROM Products AS P
+    WHERE
+      (
+        ARRAY_LENGTH(IFNULL(shipping, [])) > 0
+        AND NOT EXISTS(
+          SELECT *
+          FROM P.shipping
+          WHERE CAST(price.value AS FLOAT64) = 0
+        ))
+      OR (
+        ARRAY_LENGTH(IFNULL(shipping, [])) = 0
+        AND NOT has_account_level_free_shipping)
+  ),
+  LiaItemsWithNoInventory AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      'LIA: % items disapproved for missing inventory' AS metric_name,
+      'LIA: item disapproved for missing inventory' AS data_quality_flag,
+    FROM Products
+    WHERE
+      EXISTS(
+        SELECT 1
+        FROM UNNEST(item_issues) AS e
+        WHERE e = 'Missing inventory data'
+      )
+  ),
+  OffersWithLifestyleImages AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      '% items with lifestyle image' AS metric_name,
+      'no lifestyle images' AS data_quality_flag,
+    FROM Products
+    WHERE
+      ARRAY_LENGTH(IFNULL(lifestyle_image_links, [])) = 0
+  ),
+  RawDuplicateTitles AS (
+    SELECT
+      merchant_id,
+      channel,
+      targeted_country,
+      language,
+      title,
+      COUNT(*) AS duplicate_title_count
+    FROM Products
+    GROUP BY 1, 2, 3, 4, 5
+  ),
+  OffersWithDuplicateTitles AS (
+    SELECT DISTINCT
+      P.merchant_id,
+      P.aggregator_id,
+      P.channel,
+      P.item_id,
+      P.targeted_country,
+      P.language,
+      '% items with duplicate titles' AS metric_name,
+      'title is duplicate' AS data_quality_flag,
+    FROM Products AS P
+    INNER JOIN RawDuplicateTitles AS RDT
+      USING (merchant_id, channel, targeted_country, language, title)
+    WHERE duplicate_title_count > 1
+  ),
+  OffersWithCostOfGoodsSold AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      '% items with cost_of_goods_sold' AS metric_name,
+      'no cost_of_goods_sold' AS data_quality_flag,
+    FROM Products
+    WHERE
+      CAST(IFNULL(cost_of_goods_sold.value, '0') AS FLOAT64) = 0
   ),
   AllMetrics AS (
     SELECT * FROM DisapprovedOffers
@@ -588,7 +770,7 @@ WITH
     UNION ALL
     SELECT * FROM OffersWithSize
     UNION ALL
-    SELECT * FROM OffersWithAdditionalImages
+    SELECT * FROM OffersWith3AdditionalImages
     UNION ALL
     SELECT * FROM OffersWithCustomLabel
     UNION ALL
@@ -612,13 +794,27 @@ WITH
     UNION ALL
     SELECT * FROM OffersWithProductHighlights
     UNION ALL
-    SELECT * FROM OffersWithPriceAvailabilityAIU
+    SELECT * FROM OffersWithPriceAvailabilityConditionAIU
     UNION ALL
     SELECT * FROM LiaOffersApproved
     UNION ALL
     SELECT * FROM OffersUploadedViaApi
     UNION ALL
     SELECT * FROM OffersWithShipping
+    UNION ALL
+    SELECT * FROM LiaItemsWithNoInventory
+    UNION ALL
+    SELECT * FROM OffersWithLifestyleImages
+    UNION ALL
+    SELECT * FROM OffersWithShippingSpeed
+    UNION ALL
+    SELECT * FROM OffersWithFastShipping
+    UNION ALL
+    SELECT * FROM OffersWithFreeShipping
+    UNION ALL
+    SELECT * FROM OffersWithDuplicateTitles
+    UNION ALL
+    SELECT * FROM OffersWithCostOfGoodsSold
   )
 SELECT
   CURRENT_DATE() AS extraction_date,

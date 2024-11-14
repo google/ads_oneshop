@@ -12,7 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-
 CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_benchmark_scores
 AS (
   WITH
