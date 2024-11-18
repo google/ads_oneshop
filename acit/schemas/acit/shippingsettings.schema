@@ -1,0 +1,578 @@
+[
+  {
+    "name": "children",
+    "mode": "REPEATED",
+    "type": "RECORD",
+    "description": "",
+    "fields": [
+      {
+        "name": "settings",
+        "mode": "NULLABLE",
+        "type": "RECORD",
+        "description": "",
+        "fields": [
+          {
+            "name": "accountId",
+            "mode": "NULLABLE",
+            "type": "INTEGER",
+            "description": ""
+          },
+          {
+            "name": "services",
+            "mode": "REPEATED",
+            "type": "RECORD",
+            "description": "",
+            "fields": [
+              {
+                "name": "deliveryTime",
+                "mode": "NULLABLE",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "handlingBusinessDayConfig",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "businessDays",
+                        "mode": "REPEATED",
+                        "type": "STRING",
+                        "description": ""
+                      }
+                    ]
+                  },
+                  {
+                    "name": "maxTransitTimeInDays",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  },
+                  {
+                    "name": "minTransitTimeInDays",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  },
+                  {
+                    "name": "maxHandlingTimeInDays",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  },
+                  {
+                    "name": "minHandlingTimeInDays",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  },
+                  {
+                    "name": "cutoffTime",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "timezone",
+                        "mode": "NULLABLE",
+                        "type": "STRING",
+                        "description": ""
+                      },
+                      {
+                        "name": "minute",
+                        "mode": "NULLABLE",
+                        "type": "INTEGER",
+                        "description": ""
+                      },
+                      {
+                        "name": "hour",
+                        "mode": "NULLABLE",
+                        "type": "INTEGER",
+                        "description": ""
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "rateGroups",
+                "mode": "REPEATED",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "applicableShippingLabels",
+                    "mode": "REPEATED",
+                    "type": "STRING",
+                    "description": ""
+                  },
+                  {
+                    "name": "name",
+                    "mode": "NULLABLE",
+                    "type": "STRING",
+                    "description": ""
+                  },
+                  {
+                    "name": "mainTable",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "name",
+                        "mode": "NULLABLE",
+                        "type": "STRING",
+                        "description": ""
+                      },
+                      {
+                        "name": "rows",
+                        "mode": "REPEATED",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "cells",
+                            "mode": "REPEATED",
+                            "type": "RECORD",
+                            "description": "",
+                            "fields": [
+                              {
+                                "name": "flatRate",
+                                "mode": "NULLABLE",
+                                "type": "RECORD",
+                                "description": "",
+                                "fields": [
+                                  {
+                                    "name": "currency",
+                                    "mode": "NULLABLE",
+                                    "type": "STRING",
+                                    "description": ""
+                                  },
+                                  {
+                                    "name": "value",
+                                    "mode": "NULLABLE",
+                                    "type": "FLOAT",
+                                    "description": ""
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "rowHeaders",
+                        "mode": "NULLABLE",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "prices",
+                            "mode": "REPEATED",
+                            "type": "RECORD",
+                            "description": "",
+                            "fields": [
+                              {
+                                "name": "currency",
+                                "mode": "NULLABLE",
+                                "type": "STRING",
+                                "description": ""
+                              },
+                              {
+                                "name": "value",
+                                "mode": "NULLABLE",
+                                "type": "FLOAT",
+                                "description": ""
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "name": "columnHeaders",
+                        "mode": "NULLABLE",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "prices",
+                            "mode": "REPEATED",
+                            "type": "RECORD",
+                            "description": "",
+                            "fields": [
+                              {
+                                "name": "currency",
+                                "mode": "NULLABLE",
+                                "type": "STRING",
+                                "description": ""
+                              },
+                              {
+                                "name": "value",
+                                "mode": "NULLABLE",
+                                "type": "FLOAT",
+                                "description": ""
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "singleValue",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "flatRate",
+                        "mode": "NULLABLE",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "currency",
+                            "mode": "NULLABLE",
+                            "type": "STRING",
+                            "description": ""
+                          },
+                          {
+                            "name": "value",
+                            "mode": "NULLABLE",
+                            "type": "FLOAT",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "eligibility",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "shipmentType",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "currency",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "deliveryCountry",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "active",
+                "mode": "NULLABLE",
+                "type": "BOOLEAN",
+                "description": ""
+              },
+              {
+                "name": "name",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "settings",
+    "mode": "NULLABLE",
+    "type": "RECORD",
+    "description": "",
+    "fields": [
+      {
+        "name": "accountId",
+        "mode": "NULLABLE",
+        "type": "INTEGER",
+        "description": ""
+      },
+      {
+        "name": "services",
+        "mode": "REPEATED",
+        "type": "RECORD",
+        "description": "",
+        "fields": [
+          {
+            "name": "deliveryTime",
+            "mode": "NULLABLE",
+            "type": "RECORD",
+            "description": "",
+            "fields": [
+              {
+                "name": "handlingBusinessDayConfig",
+                "mode": "NULLABLE",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "businessDays",
+                    "mode": "REPEATED",
+                    "type": "STRING",
+                    "description": ""
+                  }
+                ]
+              },
+              {
+                "name": "maxTransitTimeInDays",
+                "mode": "NULLABLE",
+                "type": "INTEGER",
+                "description": ""
+              },
+              {
+                "name": "minTransitTimeInDays",
+                "mode": "NULLABLE",
+                "type": "INTEGER",
+                "description": ""
+              },
+              {
+                "name": "maxHandlingTimeInDays",
+                "mode": "NULLABLE",
+                "type": "INTEGER",
+                "description": ""
+              },
+              {
+                "name": "minHandlingTimeInDays",
+                "mode": "NULLABLE",
+                "type": "INTEGER",
+                "description": ""
+              },
+              {
+                "name": "cutoffTime",
+                "mode": "NULLABLE",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "timezone",
+                    "mode": "NULLABLE",
+                    "type": "STRING",
+                    "description": ""
+                  },
+                  {
+                    "name": "minute",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  },
+                  {
+                    "name": "hour",
+                    "mode": "NULLABLE",
+                    "type": "INTEGER",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "rateGroups",
+            "mode": "REPEATED",
+            "type": "RECORD",
+            "description": "",
+            "fields": [
+              {
+                "name": "applicableShippingLabels",
+                "mode": "REPEATED",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "name",
+                "mode": "NULLABLE",
+                "type": "STRING",
+                "description": ""
+              },
+              {
+                "name": "mainTable",
+                "mode": "NULLABLE",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "name",
+                    "mode": "NULLABLE",
+                    "type": "STRING",
+                    "description": ""
+                  },
+                  {
+                    "name": "rows",
+                    "mode": "REPEATED",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "cells",
+                        "mode": "REPEATED",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "flatRate",
+                            "mode": "NULLABLE",
+                            "type": "RECORD",
+                            "description": "",
+                            "fields": [
+                              {
+                                "name": "currency",
+                                "mode": "NULLABLE",
+                                "type": "STRING",
+                                "description": ""
+                              },
+                              {
+                                "name": "value",
+                                "mode": "NULLABLE",
+                                "type": "FLOAT",
+                                "description": ""
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "rowHeaders",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "prices",
+                        "mode": "REPEATED",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "currency",
+                            "mode": "NULLABLE",
+                            "type": "STRING",
+                            "description": ""
+                          },
+                          {
+                            "name": "value",
+                            "mode": "NULLABLE",
+                            "type": "FLOAT",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "columnHeaders",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "prices",
+                        "mode": "REPEATED",
+                        "type": "RECORD",
+                        "description": "",
+                        "fields": [
+                          {
+                            "name": "currency",
+                            "mode": "NULLABLE",
+                            "type": "STRING",
+                            "description": ""
+                          },
+                          {
+                            "name": "value",
+                            "mode": "NULLABLE",
+                            "type": "FLOAT",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "singleValue",
+                "mode": "NULLABLE",
+                "type": "RECORD",
+                "description": "",
+                "fields": [
+                  {
+                    "name": "flatRate",
+                    "mode": "NULLABLE",
+                    "type": "RECORD",
+                    "description": "",
+                    "fields": [
+                      {
+                        "name": "currency",
+                        "mode": "NULLABLE",
+                        "type": "STRING",
+                        "description": ""
+                      },
+                      {
+                        "name": "value",
+                        "mode": "NULLABLE",
+                        "type": "FLOAT",
+                        "description": ""
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "eligibility",
+            "mode": "NULLABLE",
+            "type": "STRING",
+            "description": ""
+          },
+          {
+            "name": "shipmentType",
+            "mode": "NULLABLE",
+            "type": "STRING",
+            "description": ""
+          },
+          {
+            "name": "currency",
+            "mode": "NULLABLE",
+            "type": "STRING",
+            "description": ""
+          },
+          {
+            "name": "deliveryCountry",
+            "mode": "NULLABLE",
+            "type": "STRING",
+            "description": ""
+          },
+          {
+            "name": "active",
+            "mode": "NULLABLE",
+            "type": "BOOLEAN",
+            "description": ""
+          },
+          {
+            "name": "name",
+            "mode": "NULLABLE",
+            "type": "STRING",
+            "description": ""
+          }
+        ]
+      }
+    ]
+  }
+]

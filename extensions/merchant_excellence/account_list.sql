@@ -77,12 +77,19 @@ WITH
       EXISTS(
         SELECT *
         FROM
-          SS.settings.services AS SVC,
-          SVC.rateGroups AS RG,
+          SS.settings.services AS S,
+          S.rateGroups AS RG,
           RG.mainTable.rows AS RS,
           RS.cells AS C
         WHERE
           C.flatRate.value = 0
+      ) OR
+      EXISTS(
+        SELECT *
+        FROM
+          SS.settings.services AS S,
+          S.rateGroups AS RG
+        WHERE RG.singleValue.flatRate.value = 0
       ) AS has_account_level_free_shipping
     FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS
   ),

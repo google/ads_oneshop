@@ -107,6 +107,8 @@ message Product {
 
   repeated ProductShipping shipping = 39;
 
+  repeated FreeShippingThreshold free_shipping_threshold = 131;
+
   optional ProductShippingWeight shipping_weight = 40;
 
   repeated string sizes = 41;
@@ -170,6 +172,8 @@ message Product {
   optional int64 min_handling_time = 86;
 
   optional Price cost_of_goods_sold = 87;
+
+  optional Price auto_pricing_min_price = 88;
 
   optional string source = 90;
 
@@ -237,6 +241,10 @@ message Product {
       127;
 
   repeated ProductCertification certifications = 129;
+
+  optional ProductStructuredTitle structured_title = 132;
+
+  optional ProductStructuredDescription structured_description = 133;
 }
 
 message Price {
@@ -281,6 +289,12 @@ message ProductShipping {
   optional int64 min_transit_time = 10;
 
   optional int64 max_transit_time = 11;
+}
+
+message FreeShippingThreshold {
+  optional string country = 1;
+
+  optional Price price_threshold = 2;
 }
 
 message ProductUnitPricingBaseMeasure {
@@ -383,6 +397,18 @@ message ProductCertification {
   optional string certification_name = 2;
 
   optional string certification_code = 3;
+}
+
+message ProductStructuredTitle {
+  optional string digital_source_type = 1;
+
+  optional string content = 2;
+}
+
+message ProductStructuredDescription {
+  optional string digital_source_type = 1;
+
+  optional string content = 2;
 }
 
 message ProductStatus {

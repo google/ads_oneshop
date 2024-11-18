@@ -423,7 +423,7 @@ def main(argv):
       del row['product']['downloaderMetadata']
       del row['status']['downloaderMetadata']
       msg = schema_pb2.WideProduct()
-      json_format.ParseDict(row, msg)
+      json_format.ParseDict(row, msg, ignore_unknown_fields=True)
       return json_format.MessageToDict(msg, preserving_proto_field_name=True)
 
     _ = (

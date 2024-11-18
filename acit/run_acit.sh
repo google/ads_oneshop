@@ -182,10 +182,10 @@ upload_to_bq() {
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.accounts"
 
   if [[ "${ADMIN}" = true ]]; then
-    bq load $BQ_FLAGS \
+    bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings" \
-      "${shippingsettings_path}"
-    # TODO: Add schema for shippingsettings
+      "${shippingsettings_path}" \
+      acit/schemas/acit/shippingsettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings"
 
     bq load $BQ_FLAGS_BASE \
