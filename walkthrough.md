@@ -33,7 +33,7 @@ token if you do not have one already.
 
 Enable the required APIs for this project.
 
-<walkthrough-enable-apis apis="iam.googleapis.com,googleads.googleapis.com,shoppingcontent.googleapis.com">
+<walkthrough-enable-apis apis="serviceusage.googleapis.com,iam.googleapis.com,googleads.googleapis.com,shoppingcontent.googleapis.com">
 </walkthrough-enable-apis>
 
 
