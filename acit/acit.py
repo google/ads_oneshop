@@ -44,9 +44,9 @@ _CUSTOMER_IDS = flags.DEFINE_multi_string(
     'customer_id',
     '',
     (
-        'The customer ID to query. '
-        'May be specified multiple times. '
-        'Expands MCCs.'
+        'The customer ID to query. May be specified multiple times. Expands'
+        ' MCCs. Accepts "login_customer_id:customer_id" if a separate login'
+        ' customer ID is required.'
     ),
 )
 
@@ -276,10 +276,7 @@ def _pull_standalone_account_resource(
   merchant_api = _get_merchant_center_api()
   logging.info('...pulling standalone account-level resource %s...' % resource)
   output_file = (
-      epath.Path(acit_mc_output_dir)
-      / account_id
-      / resource
-      / 'rows.jsonlines'
+      epath.Path(acit_mc_output_dir) / account_id / resource / 'rows.jsonlines'
   )
   output_file.parent.mkdir(parents=True, exist_ok=True)
   with output_file.open(mode='w') as f:
@@ -341,13 +338,33 @@ def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
       print(json.dumps(result), file=f)
 
 
+def _parse_login_customer_ids(customer_ids: list[str]) -> list[tuple[str, str]]:
+  """Extracts login_customer_id:customer_id pairs from input.
+
+  If no `:` delimiter is given, assume the customer ID is a login customer ID.
+
+  Args:
+    customer_ids: The input list of customers to fetch, and how to do so.
+
+  Returns:
+      A login customer ID, customer ID tuple. May be identical if no login
+      Customer ID given.
+  """
+  login_cid_pairs = []
+  for customer_id in customer_ids:
+    login_cid, *rest = customer_id.split(':')
+    customer_id = rest[0] if rest else login_cid
+    login_cid_pairs.append((login_cid, customer_id))
+  return login_cid_pairs
+
+
 def main(_):
   if _VALIDATE_ONLY.value:
-    ads_client = client.GoogleAdsClient.load_from_env(
-        version=ADS_API_VERSION
+    ads_client = client.GoogleAdsClient.load_from_env(version=ADS_API_VERSION)
+    login_customer_id, customer_id = next(
+        iter(_parse_login_customer_ids(_CUSTOMER_IDS.value))
     )
-    customer_id = next(iter(_CUSTOMER_IDS.value))
-    ads_client.login_customer_id = customer_id
+    ads_client.login_customer_id = login_customer_id
     for resource, query, mode in _ALL_GAQL:
       gaql.run_query(
           query=query,
@@ -383,12 +400,12 @@ def main(_):
   accounts_gaql = [
       query for query in _ALL_GAQL if query[2] != gaql.QueryMode.SINGLE
   ]
-  for customer_id in _CUSTOMER_IDS.value:
+  for login_customer_id, customer_id in _parse_login_customer_ids(
+      _CUSTOMER_IDS.value
+  ):
     logging.info('Processing Customer ID %s' % customer_id)
-    ads_client = client.GoogleAdsClient.load_from_env(
-        version=ADS_API_VERSION
-    )
-    ads_client.login_customer_id = customer_id
+    ads_client = client.GoogleAdsClient.load_from_env(version=ADS_API_VERSION)
+    ads_client.login_customer_id = login_customer_id
     # constants_gaql will be empty on subsequent invocations
     for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
       logging.info('...pulling resource %s...' % resource)

@@ -266,6 +266,8 @@ and paste in content similar to
 ```
 # Deployment config
 # Google Ads top-level login customer IDs, comma-delimited, no hyphens.
+# If you'd like to specify a child account, you can also do
+#   `login_customer_id:child_mcc_or_leaf_account`.
 export CUSTOMER_IDS="1234567890,0987654321"
 # Merchant Center account IDs, comma-delimited, may be parents or leaves.
 export MERCHANT_IDS="12345,67890"

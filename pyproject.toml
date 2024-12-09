@@ -12,7 +12,7 @@ dependencies = [
   'google-cloud-storage',
   'six',
   'absl-py',
-  'apache-beam[gcp]',
+  'apache-beam[gcp]==2.60.0',
   'pyarrow-hotfix',
   'protobuf',
   'etils[epath-gcs]',
@@ -26,7 +26,7 @@ dependencies = [
 requires = [
   'setuptools',
   'grpcio-tools',
-  'apache-beam >= 2.60.0',
+  'apache-beam==2.60.0',
   'protobuf',
   'importlib-resources',
   'typing-extensions',
