@@ -371,6 +371,7 @@ def main(_):
           ads_client=ads_client,
           customer_id=customer_id,
           validate_only=True,
+          use_test_accounts=gaql.USE_TEST_ACCOUNTS.value,
       )
     return
 
@@ -424,6 +425,7 @@ def main(_):
           output_dir=str(output_dir),
           query_mode=mode,
           use_simple_filename=True,
+          use_test_accounts=gaql.USE_TEST_ACCOUNTS.value,
       )
   logging.info('Done loading Ads data.')
 

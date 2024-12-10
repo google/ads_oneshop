@@ -68,6 +68,8 @@ export RUN_MERCHANT_EXCELLENCE="${RUN_MERCHANT_EXCELLENCE:-false}"
 export BUILD_TAG_BASE="${DATAFLOW_REGION}-docker.pkg.dev/${GOOGLE_CLOUD_PROJECT}/${IMAGES_REPO}"
 export STAGING_DIR="${DATAFLOW_STAGING_BUCKET}${DATASET_NAME}"
 
+export USE_TEST_ACCOUNTS="${USE_TEST_ACCOUNTS:-false}"
+
 # TODO: Parameterize secret name
 # NOTE: If image is changed, change here, too, and pass to container
 gcloud run jobs deploy ads-oneshop-job \
@@ -90,6 +92,7 @@ gcloud run jobs deploy ads-oneshop-job \
     --set-env-vars "DATAFLOW_TEMP_LOCATION=${DATAFLOW_TEMP_BUCKET}" \
     --set-env-vars "IMAGES_REPO=${IMAGES_REPO}" \
     --set-env-vars "^@^CUSTOMER_IDS=${CUSTOMER_IDS}" \
+    --set-env-vars "USE_TEST_ACCOUNTS=${USE_TEST_ACCOUNTS}" \
     --set-env-vars "^@^MERCHANT_IDS=${MERCHANT_IDS}" \
     --set-secrets  "GOOGLE_ADS_REFRESH_TOKEN=google_ads_refresh_token:latest" \
     --set-env-vars "ADMIN=${ADMIN}" \

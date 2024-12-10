@@ -54,7 +54,12 @@ import pyarrow_hotfix
 flags.DEFINE_string(
     'source_dir', '/tmp/acit/*', 'The root path for all source files.'
 )
-flags.DEFINE_string('output', 'out.jsonlines', 'The file path to output to')
+
+flags.DEFINE_string(
+    'products_output',
+    'out.jsonlines',
+    'The file path to output products to'
+)
 
 flags.DEFINE_string(
     'liasettings_output',
@@ -431,7 +436,7 @@ def main(argv):
         | 'Convert to final products table output'
         >> beam.Map(products_table_row)
         | 'JSON' >> beam.Map(json.dumps)
-        | textio.WriteToText(flags.FLAGS.output)
+        | textio.WriteToText(flags.FLAGS.products_output)
     )
 
 

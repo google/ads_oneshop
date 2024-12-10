@@ -74,6 +74,8 @@ if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
   fi
 fi
 
+USE_TEST_ACCOUNTS="${USE_TEST_ACCOUNTS:-false}"
+
 DEFAULT_RUN_ID="$(date -Iseconds)"
 
 # TODO: Add optional flag for skipping download
@@ -103,7 +105,8 @@ pull_data() {
     "${customer_id_flags[@]}" \
     "${merchant_id_flags[@]}" \
     --admin="${ADMIN}" \
-    --output="${SOURCES_DIR}"
+    --output="${SOURCES_DIR}" \
+    --use_test_accounts="${USE_TEST_ACCOUNTS}"
   echo "Data saved to ${SOURCES_DIR}"
 }
 
@@ -111,7 +114,7 @@ run_pipeline() {
   echo "Running product pipeline"
   if [[ "${USE_DATAFLOW_RUNNER}" = 'true' ]]; then
     python -m acit.create_base_tables \
-      --output="${SINKS_DIR}/wide_products_table.jsonlines" \
+      --products_output="${SINKS_DIR}/wide_products_table.jsonlines" \
       --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
       --source_dir="${SOURCES_DIR}" \
       -- \
@@ -125,7 +128,7 @@ run_pipeline() {
   else
     rm -rf "${SINKS_DIR}" && mkdir -p "${SINKS_DIR}"
     python -m acit.create_base_tables \
-      --output="${SINKS_DIR}/wide_products_table.jsonlines" \
+      --products_output="${SINKS_DIR}/wide_products_table.jsonlines" \
       --liasettings_output="${SINKS_DIR}/liasettings.jsonlines" \
       --source_dir="${SOURCES_DIR}" \
       -- \

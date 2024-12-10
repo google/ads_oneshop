@@ -35,7 +35,6 @@ from acit import ads
 from etils import epath
 
 from google.ads.googleads import client
-from google.ads.googleads.errors import GoogleAdsException
 from google.protobuf import json_format
 
 _LOGIN_CUSTOMER_ID = flags.DEFINE_string(
@@ -78,6 +77,13 @@ _ADS_API_VERSION = flags.DEFINE_string(
     'The version of the Ads API to use',
 )
 
+USE_TEST_ACCOUNTS = flags.DEFINE_bool(
+    'use_test_accounts',
+    False,
+    'Whether to use test accounts. Cannot use in conjunction with non-test'
+    ' accounts.',
+)
+
 
 class QueryMode(enum.Enum):
   LEAVES = 'leaves'
@@ -86,40 +92,52 @@ class QueryMode(enum.Enum):
   SINGLE = 'single'
 
 
-def get_children_query(mode: QueryMode = QueryMode.LEAVES):
-  clause = 'AND customer_client.id'
-  if mode == QueryMode.SINGLE:
-    clause = 'AND customer_client.level = 0'
-  if mode == QueryMode.LEAVES:
-    clause = 'AND customer_client.manager = false'
-  if mode == QueryMode.MCCS:
-    clause = 'AND customer_client.manager = true'
+def get_children_query(
+    mode: QueryMode = QueryMode.LEAVES, use_test_accounts: bool = False
+):
+  """Create the query for MCC expansion.
 
-  # TODO: b/378921053 - Add flag for 'CLOSED' accounts (like test MCC leaves)
-  return textwrap.dedent(
-      f"""\
+  Args:
+    mode: The query mode to use, or how to expand an MCC.
+    use_test_accounts: Whether to query test accounts. Mutually exclusive.
+
+  Returns:
+    The MCC expansion query.
+  """
+  expansion_clause = ''
+  if mode == QueryMode.SINGLE:
+    expansion_clause = 'AND customer_client.level = 0'
+  if mode == QueryMode.LEAVES:
+    expansion_clause = 'AND customer_client.manager = false'
+  if mode == QueryMode.MCCS:
+    expansion_clause = 'AND customer_client.manager = true'
+
+  statuses = ['ENABLED']
+  if use_test_accounts:
+    statuses.append('CLOSED')
+
+  return textwrap.dedent(f"""\
   SELECT
     customer_client.id,
     customer_client.descriptive_name,
     customer_client.manager,
-    customer.status
+    customer.status,
+    customer.test_account
   FROM customer_client
   WHERE
-    customer_client.status = 'ENABLED'
-    {clause}"""
-  )
+    customer_client.status IN ('{"', '".join(statuses)}')
+    AND customer.test_account = {'TRUE' if use_test_accounts else 'FALSE'}
+    {expansion_clause}""")
 
 
-GAQL_CAMPAIGNS = textwrap.dedent(
-    """\
+GAQL_CAMPAIGNS = textwrap.dedent("""\
   SELECT
     customer.id,
     customer.descriptive_name,
     campaign.id,
     campaign.name,
     campaign.status
-  FROM campaign"""
-)
+  FROM campaign""")
 
 
 def get_directory_path(orig_path: str) -> epath.Path:
@@ -174,6 +192,7 @@ def run_query(
     query_mode: QueryMode = QueryMode.LEAVES,
     validate_only: bool = False,
     use_simple_filename: bool = False,
+    use_test_accounts: bool = False,
 ) -> None:
   """Run a query against a Google Ads account tree and write jsonlines files.
 
@@ -191,6 +210,7 @@ def run_query(
     query_mode: The expansion behavior for this query.
     validate_only: Whether to validate the query only.
     use_simple_filename: Whether to use a simplified filename format.
+    use_test_accounts: Whether to query test accounts. Mutually exclusive.
 
   Raises:
     GoogleAdsException: If this query results in an error using `validate_only`.
@@ -203,7 +223,7 @@ def run_query(
             ads.query(
                 customer_id=customer_id,
                 ads_client=ads_client,
-                query=get_children_query(),
+                query=get_children_query(use_test_accounts=use_test_accounts),
             )
         )
     )
@@ -225,22 +245,22 @@ def run_query(
       for row in ads.query(
           customer_id=customer_id,
           ads_client=ads_client,
-          query=get_children_query(query_mode),
+          query=get_children_query(
+              mode=query_mode, use_test_accounts=use_test_accounts
+          ),
       ):
         leaf_id = row.customer_client.id
-        future_results.update(
-            {
-                executor.submit(
-                    query_to_file,
-                    customer_id=str(leaf_id),
-                    query=query,
-                    ads_client=ads_client,
-                    prefix=prefix,
-                    output_dir=output_dir,
-                    use_simple_filename=use_simple_filename,
-                ): leaf_id
-            }
-        )
+        future_results.update({
+            executor.submit(
+                query_to_file,
+                customer_id=str(leaf_id),
+                query=query,
+                ads_client=ads_client,
+                prefix=prefix,
+                output_dir=output_dir,
+                use_simple_filename=use_simple_filename,
+            ): leaf_id
+        })
 
       for completed in futures.as_completed(future_results):
         # Raise an exception if one occurred
@@ -262,6 +282,7 @@ def main(unused_argv):
       _ROOT_CUSTOMER_ID.value or _LOGIN_CUSTOMER_ID.value,
       prefix=_PREFIX.value,
       output_dir=str(_OUTPUT_DIRECTORY.value),
+      use_test_accounts=USE_TEST_ACCOUNTS.value,
   )
 
 
