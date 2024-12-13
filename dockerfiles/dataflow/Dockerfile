@@ -14,13 +14,10 @@
 
 FROM apache/beam_python3.11_sdk:2.60.0
 
-COPY --from=golang:1.23 /usr/local/go/ /usr/local/go/
+WORKDIR /src/
 
-ENV PATH="/usr/local/go/bin:${PATH}"
+COPY . .
 
-RUN pip install -U pip wheel build
-
-COPY . src/
-
-RUN cd src/ && python -m build && pip install dist/*.whl
-
+RUN \
+  pip install --require-hashes -r requirements.txt \
+  && pip install --no-deps --no-index dist/gtech_oneshop-*-py3-*-*.whl

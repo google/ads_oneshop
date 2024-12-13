@@ -1,14 +1,14 @@
 """setup.py file for setuptools."""
 
+import logging
 import pathlib
 import shutil
+import site
 import subprocess
-import setuptools
-from setuptools.command import build
 from grpc_tools import protoc
 import importlib_resources as resources
-import logging
-import site
+import setuptools
+from setuptools.command import build
 from typing_extensions import override
 
 # TODO: break out commands into its own pre-build subproject
@@ -56,6 +56,7 @@ def _build_protos(
   ]
 
   proto_files = []
+
   for proto_path in proto_paths:
     proto_files.extend(pathlib.Path(proto_path).glob('**/*.proto'))
 
@@ -97,10 +98,9 @@ class _GeneratePythonProtos(setuptools.Command):
         for k in self.distribution.package_dir
         if k
     ]
-    include_paths = [self.distribution.package_dir['']]
+    include_paths = [self.distribution.package_dir[''] + '/src']
 
-    # cwd is fine here
-    out_dir = str(pathlib.Path().resolve())
+    out_dir = str(pathlib.Path('./src').resolve())
 
     output_flags = [
         f'--python_out={out_dir}',
@@ -140,10 +140,10 @@ class _GenerateBigQuerySchemas(setuptools.Command):
         for k in self.distribution.package_dir
         if k
     ]
-    include_paths = [self.distribution.package_dir['']]
+    include_paths = [self.distribution.package_dir[''] + '/src']
 
     # cwd is fine here
-    out_dir = str(pathlib.Path().resolve())
+    out_dir = str(pathlib.Path('./src').resolve())
 
     flags = [
         f'--plugin={gen_bq_schema_command}',
@@ -178,39 +178,14 @@ class _InstallProtoFilesCommand(setuptools.Command):
       ).glob('protoc-gen-bq-schema*/*.proto'):
         gen_bq_schema_protos.append(str(proto))
     gen_bq_schema_dir = (
-        pathlib.Path(self.distribution.package_dir['']) / 'gen_bq_schema'
+        pathlib.Path(self.distribution.package_dir[''])
+        / 'src'
+        / 'gen_bq_schema'
     )
     shutil.rmtree(gen_bq_schema_dir, ignore_errors=True)
     gen_bq_schema_dir.mkdir()
     for proto in gen_bq_schema_protos:
       shutil.copy(proto, gen_bq_schema_dir)
-
-
-class _CopyProtosToBuildCommand(setuptools.Command):
-  """Command to copy vendored protos to the bdist/wheel or working directory.
-
-  Due to issues related to setuptools copying vendored packages, we copy files
-  directly to the output directory. See:
-
-   - https://github.com/pypa/setuptools/issues/1064
-   - https://stackoverflow.com/a/75709899/14603806
-  """
-
-  @override
-  def initialize_options(self):
-    self.build_lib = None
-
-  @override
-  def finalize_options(self):
-    self.set_undefined_options('build_py', ('build_lib', 'build_lib'))
-
-  @override
-  def run(self):
-    src = pathlib.Path(self.distribution.package_dir['']) / 'gen_bq_schema'
-    assert isinstance(self.build_lib, str)
-    gen_bq_schema_dir = pathlib.Path(self.build_lib) / 'gen_bq_schema'
-    # TODO: Omit .proto files from this copy.
-    shutil.copytree(src, gen_bq_schema_dir)
 
 
 class ExtendedBuild(build.build):
@@ -220,7 +195,6 @@ class ExtendedBuild(build.build):
       ('build_install_proto_files', None),
       ('build_protoc', None),
       ('build_bq_schemas', None),
-      ('build_copy_protos', None),
   ] + build.build.sub_commands
 
 
@@ -230,6 +204,5 @@ setuptools.setup(
         'build_install_proto_files': _InstallProtoFilesCommand,
         'build_protoc': _GeneratePythonProtos,
         'build_bq_schemas': _GenerateBigQuerySchemas,
-        'build_copy_protos': _CopyProtosToBuildCommand,
     }
 )

@@ -1,7 +1,7 @@
 [project]
 name = 'gtech-oneshop'
 version = '1.0'
-requires-python = '>= 3.9'
+requires-python = '>= 3.11'
 dependencies = [
   'google-ads',
   'google-api-python-client',
@@ -24,7 +24,7 @@ dependencies = [
 [build-system]
 # We need the generated protos to use a version of protobuf compatible with beam and grpc
 requires = [
-  'setuptools',
+  'build',
   'grpcio-tools',
   'apache-beam==2.60.0',
   'protobuf',
@@ -33,17 +33,8 @@ requires = [
 ]
 build-backend = 'setuptools.build_meta'
 
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.packages.find]
-include = ['acit*', 'gen_bq_schema*']
-
 [tool.setuptools.package-dir]
 # This blank path is required for protoc to know the root of the repo
 '' = '.'
-'acit' = './acit'
-'gen_bq_schema' = './gen_bq_schema'
-
-[tool.setuptools.exclude-package-data]
-'*' = ['*.proto']
+'acit' = './src/acit'
+'gen_bq_schema' = './src/gen_bq_schema'

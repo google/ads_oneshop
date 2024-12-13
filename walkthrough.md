@@ -176,7 +176,7 @@ Run the following command and click the link to authenticate with the OAuth
 playground:
 
 ```sh
-python acit/auth/oauth.py client_secrets.json adwords content
+python src/acit/auth/oauth.py client_secrets.json adwords content
 ```
 
 Click the blue **Authorize APIs** button on the left-hand pane.
@@ -223,6 +223,25 @@ terraform -chdir=infra/ apply -auto-approve -var "project_id=${GOOGLE_CLOUD_PROJ
 ```
 
 
+## Build and install the Python package
+
+Run the following command to install the application locally:
+
+```sh
+make install
+```
+
+
+## Store application secrets
+
+Run the command to store the application secrets:
+
+```sh
+source ./.venv/bin/activate
+python -m acit.register_app_secrets
+```
+
+
 ## Build the container images
 
 Run the following command to build the container images:
@@ -233,24 +252,6 @@ export DATAFLOW_REGION="$(terraform -chdir=infra/ output -json region | jq -r)"
 export CLOUD_BUILD_LOGS_URL="$(terraform -chdir=infra/ output -json cloud_build_logs_url | jq -r)"
 export IMAGES_REPO="$(terraform -chdir=infra/ output -json images_repo | jq -r)"
 ./build_images.sh
-```
-
-
-## Store application secrets
-
-Run the following command to install the application locally:
-
-```sh
-python -m venv .venv
-source ./.venv/bin/activate
-python -m pip install -U pip wheel build
-python -m pip install -e .
-```
-
-Next, run the command to store the application secrets:
-
-```sh
-python -m acit.register_app_secrets
 ```
 
 

@@ -25,19 +25,12 @@ RUN \
 # Make Python available on the path
 ENV PATH="/usr/lib/google-cloud-sdk/platform/bundledpythonunix/bin:${PATH}"
 
-COPY --from=golang:1.23 /usr/local/go/ /usr/local/go/
-
-ENV PATH="/usr/local/go/bin:${PATH}"
-
-RUN pip install -U pip wheel build
-
 WORKDIR /src/
 
 COPY . .
 
-# Install must be editable.
-# Both unittest discovery, as well as the generated schema artifacts
-# require this. By contrast, bazel is simpler to reason about.
-RUN python -m pip install -e .
+RUN \
+  pip install --require-hashes -r requirements.txt \
+  && pip install --no-deps --no-index dist/gtech_oneshop-*-py3-*-*.whl
 
-CMD [ "acit/run_acit.sh" ]
+CMD [ "src/acit/run_acit.sh" ]

@@ -181,27 +181,32 @@ upload_to_bq() {
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.accounts" \
     "${accounts_path}" \
-    acit/schemas/acit/accounts.schema
+    src/acit/schemas/acit/accounts.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.accounts"
 
   if [[ "${ADMIN}" = true ]]; then
     bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings" \
       "${shippingsettings_path}" \
-      acit/schemas/acit/shippingsettings.schema
+      src/acit/schemas/acit/shippingsettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.shippingsettings"
+
+    # This works for both editable and packaged installs
+    python -c \
+      "import importlib_resources as ir; print(ir.files('acit.api.v0.storage').joinpath('liasettings.schema').read_text())" \
+      > /tmp/liasettings.schema
 
     bq load $BQ_FLAGS_BASE \
       "${PROJECT_NAME}:${DATASET_NAME}.liasettings" \
       "${liasettings_path}" \
-      acit/api/v0/storage/liasettings.schema
+      /tmp/liasettings.schema
     bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.liasettings"
   fi
 
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.performance" \
     "${performance_path}" \
-    acit/schemas/acit/performance.schema
+    src/acit/schemas/acit/performance.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.performance"
 
   bq load $BQ_FLAGS \
@@ -209,17 +214,21 @@ upload_to_bq() {
     "${language_path}"
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.language"
 
+  python -c \
+    "import importlib_resources as ir; print(ir.files('acit.api.v0.storage').joinpath('Products.schema').read_text())" \
+    > /tmp/Products.schema
+
   bq load $BQ_FLAGS_BASE \
     "${PROJECT_NAME}:${DATASET_NAME}.products" \
     "${products_path}" \
-    acit/api/v0/storage/Products.schema
+    /tmp/Products.schema
   bq update --expiration "${ttl}" "${PROJECT_NAME}:${DATASET_NAME}.products"
 }
 
 create_views() {
   BQ_FLAGS_BASE="--location=${DATASET_LOCATION} --nouse_legacy_sql"
-  bq query $BQ_FLAGS_BASE < <(envsubst < acit/views/main_view.sql)
-  bq query $BQ_FLAGS_BASE < <(envsubst < acit/views/disapprovals_view.sql)
+  bq query $BQ_FLAGS_BASE < <(envsubst < src/acit/views/main_view.sql)
+  bq query $BQ_FLAGS_BASE < <(envsubst < src/acit/views/disapprovals_view.sql)
 }
 
 run_extensions() {

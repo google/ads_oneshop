@@ -1,4 +1,4 @@
-graft ./acit
-prune ./acit/tests
-prune ./acit/api/v1
+graft ./src/acit
+prune ./src/acit/tests
+prune ./src/acit/api/v1
 exclude **/test_*.py

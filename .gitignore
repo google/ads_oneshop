@@ -15,12 +15,12 @@ __pycache__/
 .#*
 *#*
 *_grpc.py
-gen_bq_schema/
+src/gen_bq_schema/
 *.egg-info/
 *\.json*-of-*
 *_pb2.py*
 dist/
-acit/api/**/*.schema
+src/acit/api/**/*.schema
 client_secrets.json
 refresh_token.txt
 google_ads_developer_token.txt
@@ -42,3 +42,5 @@ google_ads_developer_token.txt
 **/*_override.tf.json
 **/.terraform.tfstate.lock.info
 **/.terraform.lock.hcl
+env.sh
+
