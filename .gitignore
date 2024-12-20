@@ -15,7 +15,8 @@ __pycache__/
 .#*
 *#*
 *_grpc.py
-src/gen_bq_schema/
+src/gen_bq_schema/*
+!src/gen_bq_schema/__init__.py
 *.egg-info/
 *\.json*-of-*
 *_pb2.py*
