@@ -66,8 +66,13 @@ def build_product_group_tree(
     node['isTargeted'] = not first['adGroupCriterion']['negative']
   else:
     for criterion in [first] + rest:
+      dimensions = (
+          criterion['adGroupCriterion']['listingGroup']
+          .get('path', {})
+          .get('dimensions', [])
+      )
       is_targeted = not criterion['adGroupCriterion']['negative']
-      util.build_product_group_tree(path['dimensions'], node, is_targeted)
+      util.build_product_group_tree(dimensions, node, is_targeted)
 
   tree = util.ProductTargetingTree(
       customer_id=customer_id,

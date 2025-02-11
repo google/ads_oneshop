@@ -22,6 +22,7 @@ from acit import shopping
 class ShoppingTest(parameterized.TestCase):
 
   def test_build_product_group_tree_single_leaf(self):
+    """Top-level wildcard."""
     ad_group_criterion = google_ads_service.GoogleAdsRow({
         'customer': {
             'id': 123,
@@ -53,7 +54,8 @@ class ShoppingTest(parameterized.TestCase):
     self.assertEqual(expected, actual)
 
   def test_build_product_group_tree_unbalanced_binary_tree(self):
-    """Tests bad data scenario with ad group listing group criteria."""
+    """Caused by Collections, a deprecated concept."""
+    # NOTE: b/330418190 - See for context
 
     ad_group_criterion = google_ads_service.GoogleAdsRow({
         'customer': {
@@ -101,6 +103,100 @@ class ShoppingTest(parameterized.TestCase):
                 },
                 'isTargeted': True,
             }],
+            'dimension': {},
+            'isTargeted': None,
+        },
+    }
+    _, actual = shopping.build_product_group_tree(None, criteria)
+
+    self.assertEqual(expected, actual)
+
+  def test_build_product_group_tree_multiple_leaves(self):
+    """Validate that iterative processing of leaves works as expected."""
+
+    targeted_branch = google_ads_service.GoogleAdsRow({
+        'customer': {
+            'id': 123,
+        },
+        'campaign': {
+            'id': 456,
+        },
+        'ad_group': {
+            'id': 789,
+        },
+        'ad_group_criterion': {
+            'negative': False,
+            'listing_group': {
+                'path': {
+                    'dimensions': [{
+                        'product_type': {
+                            'level': 'LEVEL1',
+                            'value': 'my level1 type',
+                        },
+                    }],
+                }
+            },
+        },
+    })
+
+    # ... ignore all others
+    ignored_wildcard_branch = google_ads_service.GoogleAdsRow({
+        'customer': {
+            'id': 123,
+        },
+        'campaign': {
+            'id': 456,
+        },
+        'ad_group': {
+            'id': 789,
+        },
+        'ad_group_criterion': {
+            'negative': True,
+            'listing_group': {
+                'path': {
+                    'dimensions': [{
+                        'product_type': {
+                            'level': 'LEVEL1',
+                        },
+                    }],
+                }
+            },
+        },
+    })
+    criteria = [
+        google_ads_service.GoogleAdsRow.to_dict(
+            ad_group_criterion,
+            use_integers_for_enums=False,
+            preserving_proto_field_name=False,
+        )
+        for ad_group_criterion in (targeted_branch, ignored_wildcard_branch)
+    ]
+    expected = {
+        'customer_id': '123',
+        'campaign_id': '456',
+        'tree_parent_id': '789',
+        'node': {
+            'children': [
+                {
+                    'children': [],
+                    'dimension': {
+                        'productType': {
+                            'level': 'LEVEL1',
+                            'value': 'my level1 type',
+                        }
+                    },
+                    'isTargeted': True,
+                },
+                {
+                    'children': [],
+                    'dimension': {
+                        'productType': {
+                            'level': 'LEVEL1',
+                        }
+                    },
+                    'isTargeted': False,
+                },
+            ],
             'dimension': {},
             'isTargeted': None,
         },
