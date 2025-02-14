@@ -16,9 +16,6 @@ The Ads OneShop project contains two solutions:
 *   Advanced Commerce Insights Tool (ACIT) - A monitoring dashboard for product lifecycle
 *   Merchant Excellence (MEX) - A best-practices dashboard for Google Merchant Center (GMC) accounts
 
-Merchant Excellence was previously built upon another gTech solution, Shopping
-Insider. It been refactored to reuse ACIT, which provides greater flexibility.
-
 
 ## Setup
 
