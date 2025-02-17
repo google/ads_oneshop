@@ -14,7 +14,7 @@ performance.
 The Ads OneShop project contains two solutions:
 
 *   Advanced Commerce Insights Tool (ACIT) - A monitoring dashboard for product lifecycle
-*   Merchant Excellence (MEX) - A best-practices dashboard for Google Merchant Center (GMC) accounts
+*   Merchant Excellence for Partners (MEX4P) - A best-practices dashboard for Google Merchant Center (GMC) accounts
 
 
 ## Setup
@@ -58,7 +58,7 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     [template](https://lookerstudio.google.com/c/u/0/reporting/0cbb3e05-67af-4521-b4c2-d731f1ca78ee/page/RLaHD).
 *   Update data sources to use BQ dataset.
 
-### MEX Deployment
+### MEX4P Deployment
 
 *   Download and save the benchmark files.
     *   [benchmark_details.csv](benchmark/benchmark_details.csv)
@@ -82,7 +82,7 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     `export RUN_MERCHANT_EXCELLENCE=true`, and re-run `./deploy_job.sh`.
 
 
-### MEX Dashboard Deployment
+### MEX4P Dashboard Deployment
 
 *   To gain access to the template, ensure you've joined the
     [public group](https://groups.google.com/g/ads-oneshop) as pointed out
