@@ -16,9 +16,11 @@ build_dependencies: install_dependencies
 	source ./.venv/bin/activate \
 	&& python -m pip install --require-hashes -r requirements_dev.txt \
 
+# For editable installs, src/gen_bq_schema/__init__.py needs to remain undeleted
 .PHONY: dev
 dev: build_dependencies
 	source ./.venv/bin/activate \
+	&& git update-index --assume-unchanged ./src/gen_bq_schema/__init__.py \
 	&& python -m pip install coverage pyink \
 	&& python -m pip install -e .
 
