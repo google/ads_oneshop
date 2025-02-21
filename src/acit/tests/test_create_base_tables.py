@@ -26,32 +26,28 @@ class CreateBaseTablesTest(absltest.TestCase):
 
   def test_combine_campaign_settings_works(self):
     self._combine_campaign_settings_test(
-        campaigns=[
-            {
-                'customer': {'id': '123'},
-                'campaign': {
-                    'id': '123',
-                    'shoppingSetting': {
-                        'merchantId': '456',
-                    },
-                    'advertisingChannelType': 'something',
+        campaigns=[{
+            'customer': {'id': '123'},
+            'campaign': {
+                'id': '123',
+                'shoppingSetting': {
+                    'merchantId': '456',
                 },
-            }
-        ],
+                'advertisingChannelType': 'something',
+            },
+        }],
         languages=[('123', {'language': 'English', 'is_targeted': True})],
         listing_scopes=[('123', [])],
-        expected=[
-            {
-                'customer_id': '123',
-                'campaign_id': '123',
-                'merchant_id': '456',
-                'languages': [{'language': 'English', 'is_targeted': True}],
-                'campaign_type': 'something',
-                'enable_local': False,
-                'feed_label': '',
-                'inventory_filter_dimensions': [],
-            }
-        ],
+        expected=[{
+            'customer_id': '123',
+            'campaign_id': '123',
+            'merchant_id': '456',
+            'languages': [{'language': 'English', 'is_targeted': True}],
+            'campaign_type': 'something',
+            'enable_local': False,
+            'feed_label': '',
+            'inventory_filter_dimensions': [],
+        }],
     )
 
   def test_criteria_without_campaigns_race_condition(self):

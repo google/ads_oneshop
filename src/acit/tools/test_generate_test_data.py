@@ -177,8 +177,7 @@ class TestGenerator(absltest.TestCase):
     actual = len(list(g.asset_group_listing_group_filters()))
     self.assertTrue(
         0 < actual,
-        'PMax campaigns must generate some asset group '
-        'listing group filters.',
+        'PMax campaigns must generate some asset group listing group filters.',
     )
 
   def test_create_asset_group_listing_group_filter_shopping(self):
@@ -217,22 +216,18 @@ class TestGenerator(absltest.TestCase):
     expected_criteria_length = 6
 
     model = {
-        'advertisers': [
-            {
-                'campaigns': [
-                    {
-                        'enable_local': False,
-                        'feed_label': 'online',
-                        'id': campaign_id,
-                        'listing_scopes': [],
-                        'merchant_id': 64438,
-                        'targeting': [('CATEGORY', category_id)],
-                        'type': 'SHOPPING',
-                    }
-                ],
-                'id': customer_id,
-            }
-        ]
+        'advertisers': [{
+            'campaigns': [{
+                'enable_local': False,
+                'feed_label': 'online',
+                'id': campaign_id,
+                'listing_scopes': [],
+                'merchant_id': 64438,
+                'targeting': [('CATEGORY', category_id)],
+                'type': 'SHOPPING',
+            }],
+            'id': customer_id,
+        }]
     }
 
     g = gtd.Generator(model=model)

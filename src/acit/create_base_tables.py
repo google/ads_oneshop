@@ -56,9 +56,7 @@ flags.DEFINE_string(
 )
 
 flags.DEFINE_string(
-    'products_output',
-    'out.jsonlines',
-    'The file path to output products to'
+    'products_output', 'out.jsonlines', 'The file path to output products to'
 )
 
 flags.DEFINE_string(
@@ -93,8 +91,9 @@ def combine_campaign_settings(
   # TODO: https://github.com/apache/beam/issues/20825 - Remove pyright ignore annotation.
   return (  # pyright: ignore [reportReturnType]
       {
-          'campaigns': campaign_settings
-          | beam.Map(lambda c: (c['campaign']['id'], c)),
+          'campaigns': campaign_settings | beam.Map(
+              lambda c: (c['campaign']['id'], c)
+          ),
           'languages': languages_by_campaign_id,
           'inventory_filter_dimensions': listing_scopes_by_campaign_id,
       }
@@ -158,16 +157,14 @@ def main(argv):
             lambda row: (
                 row['productCategoryConstant']['categoryId'],
                 next(
-                    iter(
-                        [
-                            localization['value']
-                            for localization in row['productCategoryConstant'][
-                                'localizations'
-                            ]
-                            if localization['regionCode'] == 'US'
-                            and localization['languageCode'] == 'en'
+                    iter([
+                        localization['value']
+                        for localization in row['productCategoryConstant'][
+                            'localizations'
                         ]
-                    )
+                        if localization['regionCode'] == 'US'
+                        and localization['languageCode'] == 'en'
+                    ])
                 ),
             )
         )
@@ -337,9 +334,7 @@ def main(argv):
     # First, join all products and their 1:1 statuses
     product_statuses = (
         {
-            'products': products
-            | 'Prep products for join'
-            >> beam.Map(
+            'products': products | 'Prep products for join' >> beam.Map(
                 lambda p: (
                     (
                         p[resource_downloader.METADATA_KEY]['accountId'],
@@ -348,15 +343,17 @@ def main(argv):
                     p,
                 )
             ),
-            'statuses': product_statuses
-            | 'Prep product statuses for join'
-            >> beam.Map(
-                lambda p: (
-                    (
-                        p[resource_downloader.METADATA_KEY]['accountId'],
-                        p['productId'],
-                    ),
-                    p,
+            'statuses': (
+                product_statuses
+                | 'Prep product statuses for join'
+                >> beam.Map(
+                    lambda p: (
+                        (
+                            p[resource_downloader.METADATA_KEY]['accountId'],
+                            p['productId'],
+                        ),
+                        p,
+                    )
                 )
             ),
         }
@@ -364,15 +361,15 @@ def main(argv):
         | 'Join product tables where possible'
         # Downloaders may suffer from race conditions
         >> beam.FlatMapTuple(
-            lambda k, v: [
-                {
-                    'accountId': k[0],
-                    'offerId': k[1],
-                    # Guaranteed to be 1 of each if we reach here
-                    'product': v['products'][0],
-                    'status': v['statuses'][0],
-                }
-            ]
+            # TODO: b/398293705 - Refactor lambdas here and elsewhere
+            # pylint: disable=g-long-ternary
+            lambda k, v: [{
+                'accountId': k[0],
+                'offerId': k[1],
+                # Guaranteed to be 1 of each if we reach here
+                'product': v['products'][0],
+                'status': v['statuses'][0],
+            }]
             if v['products'] and v['statuses']
             else []
         )

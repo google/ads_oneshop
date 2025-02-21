@@ -22,23 +22,21 @@ from acit import shopping
 class ShoppingTest(parameterized.TestCase):
 
   def test_build_product_group_tree_single_leaf(self):
-    ad_group_criterion = google_ads_service.GoogleAdsRow(
-        {
-            'customer': {
-                'id': 123,
-            },
-            'campaign': {
-                'id': 456,
-            },
-            'ad_group': {
-                'id': 789,
-            },
-            'ad_group_criterion': {
-                'negative': False,
-                'listing_group': {'path': None},
-            },
-        }
-    )
+    ad_group_criterion = google_ads_service.GoogleAdsRow({
+        'customer': {
+            'id': 123,
+        },
+        'campaign': {
+            'id': 456,
+        },
+        'ad_group': {
+            'id': 789,
+        },
+        'ad_group_criterion': {
+            'negative': False,
+            'listing_group': {'path': None},
+        },
+    })
     expected = {
         'customer_id': '123',
         'campaign_id': '456',
@@ -57,34 +55,30 @@ class ShoppingTest(parameterized.TestCase):
   def test_build_product_group_tree_unbalanced_binary_tree(self):
     """Tests bad data scenario with ad group listing group criteria."""
 
-    ad_group_criterion = google_ads_service.GoogleAdsRow(
-        {
-            'customer': {
-                'id': 123,
+    ad_group_criterion = google_ads_service.GoogleAdsRow({
+        'customer': {
+            'id': 123,
+        },
+        'campaign': {
+            'id': 456,
+        },
+        'ad_group': {
+            'id': 789,
+        },
+        'ad_group_criterion': {
+            'negative': False,
+            'listing_group': {
+                'path': {
+                    'dimensions': [{
+                        'product_type': {
+                            'level': 'LEVEL1',
+                            'value': 'my level1 type',
+                        },
+                    }],
+                }
             },
-            'campaign': {
-                'id': 456,
-            },
-            'ad_group': {
-                'id': 789,
-            },
-            'ad_group_criterion': {
-                'negative': False,
-                'listing_group': {
-                    'path': {
-                        'dimensions': [
-                            {
-                                'product_type': {
-                                    'level': 'LEVEL1',
-                                    'value': 'my level1 type',
-                                },
-                            }
-                        ],
-                    }
-                },
-            },
-        }
-    )
+        },
+    })
     criteria = [
         google_ads_service.GoogleAdsRow.to_dict(
             ad_group_criterion,
@@ -97,18 +91,16 @@ class ShoppingTest(parameterized.TestCase):
         'campaign_id': '456',
         'tree_parent_id': '789',
         'node': {
-            'children': [
-                {
-                    'children': [],
-                    'dimension': {
-                        'productType': {
-                            'level': 'LEVEL1',
-                            'value': 'my level1 type',
-                        }
-                    },
-                    'isTargeted': True,
-                }
-            ],
+            'children': [{
+                'children': [],
+                'dimension': {
+                    'productType': {
+                        'level': 'LEVEL1',
+                        'value': 'my level1 type',
+                    }
+                },
+                'isTargeted': True,
+            }],
             'dimension': {},
             'isTargeted': None,
         },

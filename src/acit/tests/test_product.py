@@ -408,24 +408,20 @@ class ProductTest(parameterized.TestCase):
     is_targeted = True
 
     expected = {
-        'children': [
-            {
-                'children': [
-                    {
-                        'children': [],
-                        'dimension': {'productType': {'level': 'LEVEL2'}},
-                        'isTargeted': True,
-                    }
-                ],
-                'dimension': {
-                    'productType': {
-                        'level': 'LEVEL1',
-                        'value': 'my level1 type',
-                    }
-                },
-                'isTargeted': None,
-            }
-        ],
+        'children': [{
+            'children': [{
+                'children': [],
+                'dimension': {'productType': {'level': 'LEVEL2'}},
+                'isTargeted': True,
+            }],
+            'dimension': {
+                'productType': {
+                    'level': 'LEVEL1',
+                    'value': 'my level1 type',
+                }
+            },
+            'isTargeted': None,
+        }],
         'dimension': {},
         'isTargeted': None,
     }
@@ -451,24 +447,22 @@ class ProductTest(parameterized.TestCase):
     ]
 
     root: product_util.ProductTargetingNode = {
-        'children': [
-            {
-                'children': [
-                    {
-                        'children': [],
-                        'dimension': {'productType': {'level': 'LEVEL2'}},
-                        'isTargeted': True,
-                    },
-                ],
-                'dimension': {
-                    'productType': {
-                        'level': 'LEVEL1',
-                        'value': 'my level1 type',
-                    }
+        'children': [{
+            'children': [
+                {
+                    'children': [],
+                    'dimension': {'productType': {'level': 'LEVEL2'}},
+                    'isTargeted': True,
                 },
-                'isTargeted': None,
-            }
-        ],
+            ],
+            'dimension': {
+                'productType': {
+                    'level': 'LEVEL1',
+                    'value': 'my level1 type',
+                }
+            },
+            'isTargeted': None,
+        }],
         'dimension': {},
         'isTargeted': None,
     }
@@ -476,34 +470,32 @@ class ProductTest(parameterized.TestCase):
     is_targeted = False
 
     expected: product_util.ProductTargetingNode = {
-        'children': [
-            {
-                'children': [
-                    {
-                        'children': [],
-                        'dimension': {'productType': {'level': 'LEVEL2'}},
-                        'isTargeted': True,
-                    },
-                    {
-                        'children': [],
-                        'dimension': {
-                            'productType': {
-                                'level': 'LEVEL2',
-                                'value': 'my level2 type',
-                            }
-                        },
-                        'isTargeted': False,
-                    },
-                ],
-                'dimension': {
-                    'productType': {
-                        'level': 'LEVEL1',
-                        'value': 'my level1 type',
-                    }
+        'children': [{
+            'children': [
+                {
+                    'children': [],
+                    'dimension': {'productType': {'level': 'LEVEL2'}},
+                    'isTargeted': True,
                 },
-                'isTargeted': None,
-            }
-        ],
+                {
+                    'children': [],
+                    'dimension': {
+                        'productType': {
+                            'level': 'LEVEL2',
+                            'value': 'my level2 type',
+                        }
+                    },
+                    'isTargeted': False,
+                },
+            ],
+            'dimension': {
+                'productType': {
+                    'level': 'LEVEL1',
+                    'value': 'my level1 type',
+                }
+            },
+            'isTargeted': None,
+        }],
         'dimension': {},
         'isTargeted': None,
     }
