@@ -53,7 +53,7 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
 *   To be able to access the template below, join the
     [Ads OneShop public Google group](https://groups.google.com/g/ads-oneshop).
     *   The group is **open**, no need to request access.
-    *   Just press 'Join Group' when **logged in with a Google Account**.)
+    *   Just press 'Join Group' when **logged in with a Google Account**.
 *   Make a Copy of the
     [template](https://lookerstudio.google.com/c/u/0/reporting/0cbb3e05-67af-4521-b4c2-d731f1ca78ee/page/RLaHD).
 *   Update data sources to use BQ dataset.
@@ -88,5 +88,5 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     [public group](https://groups.google.com/g/ads-oneshop) as pointed out
     previously.
 *   Copy the
-    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD)
+    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD) **IMPORTANT: (you need to get access to the group on the previous step before opening the template)**
 *   Update data sources to use BQ dataset.
