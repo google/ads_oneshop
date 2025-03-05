@@ -1,5 +1,5 @@
 [project]
-name = 'gtech-oneshop'
+name = 'ads-oneshop'
 version = '1.0'
 requires-python = '>= 3.11'
 dependencies = [
