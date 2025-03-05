@@ -20,4 +20,4 @@ COPY . .
 
 RUN \
   pip install --require-hashes -r requirements.txt \
-  && pip install --no-deps --no-index dist/gtech_oneshop-*-py3-*-*.whl
+  && pip install --no-deps --no-index dist/ads_oneshop-*-py3-*-*.whl
