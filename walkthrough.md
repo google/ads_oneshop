@@ -101,7 +101,34 @@ NOTE: If your app is external, you will have to add yourself to the list of
 external users.
 
 
-## Creating OAuth Credentials
+## Choosing a form of authentication
+
+To access Google Ads and Merchant Center, OneShop can use either:
+
+ - User credentials (via a stored OAuth refresh token), or
+ - A Google Cloud Service Account
+
+NOTE: To use the Service Account flow, leave any of the text files in the
+following steps empty, *except* `google_ads_developer_token.txt`.
+
+NOTE: If using the Service Account flow, you **must** add the Service Account
+email address
+(**oneshop-cloudrun-sa@<walkthrough-project-id>.iam.gserviceaccount.com**)
+as a user of your Google Ads and Merchant Center accounts. You will not be able
+to add this email address until the service account has been created, during the
+**Set up cloud environment** step.
+
+<!-- TODO: b/401571626 - Remove if this gets fixed -->
+
+WARNING: Due to an issue, **do not** run `terraform destroy` or otherwise delete
+the created Service Account once it has been added to a Google Ads account. If
+this happens, you will need to create a new Service Account with a different
+name, either by modifying the code or creating a new GCP project.
+
+
+## Creating OAuth Credentials (Optional)
+
+NOTE: If you want to use Service Accounts instead, you can skip this step.
 
 Create the credentials that are needed for generating a refresh token.
 
@@ -171,6 +198,10 @@ Open
 </walkthrough-editor-open-file>
 and paste in the contents of the OAuth secrets file you downloaded earlier.
 Save the file.
+
+NOTE: If you want to use Service Accounts instead, skip down to setting up
+`google_ads_developer_token.txt` below. If you are switching from an OAuth
+setup, make sure the rest of these files are empty.
 
 Run the following command and click the link to authenticate with the OAuth
 playground:
@@ -274,7 +305,7 @@ export CUSTOMER_IDS="1234567890,0987654321"
 export MERCHANT_IDS="12345,67890"
 # Update to "true" if you are an admin on the Merchant Center account.
 export ADMIN="false"
-# The location of the outpu BigQuery dataset
+# The location of the output BigQuery dataset
 export DATASET_LOCATION="US"
 # The name for the output BigQuery dataset
 export DATASET_NAME="oneshop"
