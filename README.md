@@ -55,7 +55,7 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     *   The group is **open**, no need to request access.
     *   Just press 'Join Group' when **logged in with a Google Account**.
 *   Make a Copy of the
-    [template](https://lookerstudio.google.com/c/u/0/reporting/0cbb3e05-67af-4521-b4c2-d731f1ca78ee/page/RLaHD).
+    [template](https://lookerstudio.google.com/c/u/0/reporting/666f766e-6b80-48fb-94ca-aa8efe1113a0/page/RLaHD).
 *   Update data sources to use BQ dataset.
 
 ### MEX4P Deployment
