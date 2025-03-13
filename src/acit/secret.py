@@ -97,7 +97,8 @@ class SecretsManager:
       )
       secret = self._client.create_secret(create_request)
 
-    secret_bytes = payload.encode('UTF-8')
+    # Secret manager won't let us store empty secrets directly
+    secret_bytes = (payload or ' ').encode('UTF-8')
     crc32c = google_crc32c.Checksum()
     crc32c.update(secret_bytes)
     secret_version = self._client.add_secret_version(

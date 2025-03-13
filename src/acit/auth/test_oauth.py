@@ -52,6 +52,11 @@ class OAuthTest(absltest.TestCase):
 
     self.assertUrlEqual(expected, actual)
 
+  def test_empty_file(self):
+    secrets = self.create_tempfile(content='')
+    secrets_path = os.fspath(secrets)
+    self.assertEqual({}, oauth.get_secrets_dict(secrets_path))
+
 
 if __name__ == '__main__':
   absltest.main()

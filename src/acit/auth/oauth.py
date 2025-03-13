@@ -42,7 +42,7 @@ def get_secrets_dict(secrets_path: str) -> dict[str, str]:
     A dictionary representing the secrets.
   """
   with open(secrets_path) as f:
-    secrets = json.loads(f.read()).get('web', {})
+    secrets = json.loads(f.read().strip() or '{}').get('web', {})
   return secrets
 
 

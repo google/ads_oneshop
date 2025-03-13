@@ -26,8 +26,10 @@ from absl import logging
 from acit import gaql
 from acit import resource_downloader
 from etils import epath
+from google import auth
 from google.ads.googleads import client
-from google.oauth2 import credentials
+from google.auth import credentials
+from google.oauth2 import credentials as oauth_credentials
 from googleapiclient import discovery
 from googleapiclient import http
 
@@ -218,7 +220,6 @@ _ALL_GAQL = [
     ),
 ]
 
-_ACIT_ADS_PREFIX = 'acit_ads'
 _ACIT_ADS_OUTPUT_DIR = 'ads'
 
 _ACIT_MC_OUTPUT_DIR = 'merchant_center'
@@ -246,25 +247,34 @@ _ACIT_ACCOUNT_ADMIN_RESOURCES = [
 ]
 
 
+def _get_credentials() -> credentials.Credentials:
+  refresh_token = os.environ.get('GOOGLE_ADS_REFRESH_TOKEN', '').strip()
+  client_id = os.environ.get('GOOGLE_ADS_CLIENT_ID', '').strip()
+  client_secret = os.environ.get('GOOGLE_ADS_CLIENT_SECRET', '').strip()
+  if not (refresh_token and client_id and client_secret):
+    logging.info('Using application default credentials')
+    creds, _ = auth.default()
+    assert isinstance(creds, credentials.Credentials)
+    return creds
+  else:
+    logging.info('Using oauth credentials')
+    return oauth_credentials.Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri=_OAUTH_TOKEN_ENDPOINT,
+        client_id=client_id,
+        client_secret=client_secret,
+    )
+
+
 def _get_merchant_center_api() -> Any:
   """Get Merchant Center API client. Factory.
-
-  Reuses API credentials from Google Ads.
 
   Returns:
     The Merchant Center API client.
   """
 
-  refresh_token = os.environ.get('GOOGLE_ADS_REFRESH_TOKEN')
-  client_id = os.environ.get('GOOGLE_ADS_CLIENT_ID')
-  client_secret = os.environ.get('GOOGLE_ADS_CLIENT_SECRET')
-  creds = credentials.Credentials(
-      token=None,
-      refresh_token=refresh_token,
-      token_uri=_OAUTH_TOKEN_ENDPOINT,
-      client_id=client_id,
-      client_secret=client_secret,
-  )
+  creds = _get_credentials()
 
   merchant_api = discovery.build('content', 'v2.1', credentials=creds)
   return merchant_api
@@ -359,8 +369,14 @@ def _parse_login_customer_ids(customer_ids: list[str]) -> list[tuple[str, str]]:
 
 
 def main(_):
+  creds = _get_credentials()
+  developer_token = os.environ.get('GOOGLE_ADS_DEVELOPER_TOKEN')
   if _VALIDATE_ONLY.value:
-    ads_client = client.GoogleAdsClient.load_from_env(version=ADS_API_VERSION)
+    ads_client = client.GoogleAdsClient(
+        credentials=creds,
+        developer_token=developer_token,
+        version=ADS_API_VERSION,
+    )
     login_customer_id, customer_id = next(
         iter(_parse_login_customer_ids(_CUSTOMER_IDS.value))
     )
@@ -405,7 +421,11 @@ def main(_):
       _CUSTOMER_IDS.value
   ):
     logging.info('Processing Customer ID %s' % customer_id)
-    ads_client = client.GoogleAdsClient.load_from_env(version=ADS_API_VERSION)
+    ads_client = client.GoogleAdsClient(
+        credentials=creds,
+        developer_token=developer_token,
+        version=ADS_API_VERSION,
+    )
     ads_client.login_customer_id = login_customer_id
     # constants_gaql will be empty on subsequent invocations
     for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
