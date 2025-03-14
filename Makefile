@@ -1,6 +1,6 @@
 .PHONY: clean
 clean:
-	rm -rf ./.venv ./gtech-* ./dist/
+	rm -rf ./.venv ./ads-* ./dist/
 
 .PHONY: setup
 setup:
@@ -57,4 +57,4 @@ build: build_dependencies
 .PHONY: install
 install: build
 	source ./.venv/bin/activate \
-	&& python -m pip install --force-reinstall --no-deps --no-index dist/gtech_oneshop-*-py3-*-*.whl
+	&& python -m pip install --force-reinstall --no-deps --no-index dist/ads_oneshop-*-py3-*-*.whl
