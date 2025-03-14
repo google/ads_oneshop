@@ -48,6 +48,14 @@ The Ads OneShop project contains two solutions:
 
 Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.google.com/?cloudshell=true&cloudshell_git_repo=https://github.com/google/ads_oneshop&cloudshell_tutorial=walkthrough.md).
 
+If the tutorial was closed by accident (e.g. you had to refresh the page) and you need to open it again, first run the command below to open the right directory:
+
+`cd ~/cloudshell_open/ads_oneshop/`
+
+Then, to open the tutorial again, run:
+
+`cloudshell_open --tutorial "walkthrough.md"`
+
 ### ACIT Dashboard Deployment
 
 *   To be able to access the template below, join the

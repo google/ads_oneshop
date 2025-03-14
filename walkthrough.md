@@ -33,7 +33,7 @@ token if you do not have one already.
 
 Enable the required APIs for this project.
 
-<walkthrough-enable-apis apis="serviceusage.googleapis.com,iam.googleapis.com,googleads.googleapis.com,shoppingcontent.googleapis.com">
+<walkthrough-enable-apis apis="serviceusage.googleapis.com,iam.googleapis.com,googleads.googleapis.com,shoppingcontent.googleapis.com,cloudresourcemanager.googleapis.com">
 </walkthrough-enable-apis>
 
 
@@ -181,7 +181,14 @@ cloudshell open-workspace ~/cloudshell_open/ads_oneshop
 
 Wait for the workspace to load.
 
-Then,
+NOTE: If the loading is stuck, copy the command below:
+```sh
+cd ~/cloudshell_open/ads_oneshop && cloudshell_open --tutorial "walkthrough.md"
+```
+
+Then, refresh the page and, after it loads, open the terminal, paste the command you just copied and run it.
+
+Once you have the workspace working,
 <walkthrough-editor-spotlight spotlightId="menu-terminal-new-terminal">
   open a terminal
 </walkthrough-editor-spotlight> and run the following command:
@@ -245,13 +252,15 @@ Set up the infrastructure.
 
 <!-- TODO: fix region parameterization -->
 
-Run the following commands to provision the infrastructure:
+Make sure you have billing enabled in your project and run the following commands to provision the infrastructure:
 
 ```sh
 export GOOGLE_CLOUD_PROJECT="$(gcloud config get project)"
 terraform -chdir=infra/ init
 terraform -chdir=infra/ apply -auto-approve -var "project_id=${GOOGLE_CLOUD_PROJECT}" -var "region=us-central1"
 ```
+
+During this step, you might see an error like this: "Error: Request `Create IAM Members roles/storage.admin". This means that some changes that were made haven't propagated yet. Wait a couple of minutes and run the same command again until you see a "Apply complete" message.
 
 
 ## Build and install the Python package
