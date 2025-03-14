@@ -17,8 +17,20 @@
 set -e
 
 create_views() {
-  BQ_FLAGS_BASE="--location=${DATASET_LOCATION} --nouse_legacy_sql"
+  # Define parameters for running `bq` commands
+  BQ_FLAGS_BASE="--location=${DATASET_LOCATION} \
+  --nouse_legacy_sql"
+  BQ_FLAGS_CSV="--location=${DATASET_LOCATION} \
+  --replace=true \
+  --source_format=CSV \
+  --autodetect"
   CURRENT_DATE="$(date '+%Y%m%d')"
+
+  # Loading the Benchmark files into BQ Tables
+  bq load $BQ_FLAGS_CSV ${PROJECT_NAME}:${DATASET_NAME}.MEX_benchmark_values benchmark/benchmark_values.csv
+  bq load $BQ_FLAGS_CSV ${PROJECT_NAME}:${DATASET_NAME}.MEX_benchmark_details benchmark/benchmark_details.csv
+
+  # Running Merchant Excellence queries
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/offer_list.sql)
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/account_list.sql)
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/benchmark_scores.sql)

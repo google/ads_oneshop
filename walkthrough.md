@@ -312,16 +312,15 @@ and paste in content similar to
 export CUSTOMER_IDS="1234567890,0987654321"
 # Merchant Center account IDs, comma-delimited, may be parents or leaves.
 export MERCHANT_IDS="12345,67890"
-# Update to "true" if you are an admin on the Merchant Center account.
-export ADMIN="false"
+# Update to "false" if you are not an admin on the Merchant Center account.
+export ADMIN="true"
 # The location of the output BigQuery dataset
 export DATASET_LOCATION="US"
 # The name for the output BigQuery dataset
 export DATASET_NAME="oneshop"
 
-# Optionally, if you'd like to run Merchant Excellence, uncomment the following line:
-# NOTE: This will fail if benchmarks have not been uploaded.
-# export RUN_MERCHANT_EXCELLENCE=true
+# Optionally, if you don't want to run Merchant Excellence, comment the following line:
+export RUN_MERCHANT_EXCELLENCE=true
 ```
 
 Update the file contents to match your environment.

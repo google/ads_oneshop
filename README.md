@@ -66,35 +66,12 @@ Then, to open the tutorial again, run:
     [template](https://lookerstudio.google.com/c/u/0/reporting/666f766e-6b80-48fb-94ca-aa8efe1113a0/page/RLaHD).
 *   Update data sources to use BQ dataset.
 
-### MEX4P Deployment
-
-*   Download and save the benchmark files.
-    *   [benchmark_details.csv](benchmark/benchmark_details.csv)
-    *   [benchmark_values.csv](benchmark/benchmark_values.csv)
-*   Go to BigQuery in GCP and click on the dataset's 3 dot menu
-
-<img src="images/create_table.png">
-
-*   Follow the example below and upload the benchmark details and values files
-*   **Please follow the recommended names:**
-    *   MEX_benchmark_details
-    *   MEX_benchmark_values
-*   (Repeat the example below for the values file as well)
-
-<img src="images/create_table_2.png">
-
-*   After the files have been uploaded successfully, verify that those tables
-    have been created.
-
-*   Finally, change your `env.sh` file (see the tutorial) to include
-    `export RUN_MERCHANT_EXCELLENCE=true`, and re-run `./deploy_job.sh`.
-
-
 ### MEX4P Dashboard Deployment
 
 *   To gain access to the template, ensure you've joined the
     [public group](https://groups.google.com/g/ads-oneshop) as pointed out
     previously.
-*   Copy the
-    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD) **IMPORTANT: (you need to get access to the group on the previous step before opening the template)**
-*   Update data sources to use BQ dataset.
+*    **(IMPORTANT: you need to get access to the group on the previous step before opening the template)**. After making sure you joined the group, copy the
+    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD).
+*   When making a copy of the template, you'll see a popup asking you to map the "Original Data Source" to a "New Data Source", **don't** select your newly created tables just now. Instead, just click "Copy Report".
+*   In the new dashboard that you just created, go through the [steps to update the data sources](https://cloud.google.com/looker/docs/studio/edit-a-data-source-article) and select your newly created tables.
