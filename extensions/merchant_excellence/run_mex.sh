@@ -31,6 +31,7 @@ create_views() {
   bq load $BQ_FLAGS_CSV ${PROJECT_NAME}:${DATASET_NAME}.MEX_benchmark_details benchmark/benchmark_details.csv
 
   # Running Merchant Excellence queries
+  bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/admin_tables.sql)
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/offer_list.sql)
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/account_list.sql)
   bq query $BQ_FLAGS_BASE < <(envsubst < ./extensions/merchant_excellence/benchmark_scores.sql)
