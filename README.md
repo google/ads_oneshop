@@ -56,6 +56,11 @@ Then, to open the tutorial again, run:
 
 `cloudshell_open --tutorial "walkthrough.md"`
 
+#### Implementation walkthrough  video
+We recorded a video where we go through the implementation of Merchant Excellence for Partners to help guide you through that process. You can take a look at the two takes below:
+* **[Short version](https://www.youtube.com/watch?v=8Fb-X7IJxcI)**: a version of the implementation that goes through the main parts of the process, editing out long explanations about each step and fast forwards the long waits for the scripts to run.
+* **[Long version](https://www.youtube.com/watch?v=ji8RaVgBcUI)**: a version that goes through each part in detail, explaning each step of the process and also fast forwards the long waits for the scripts to run.
+
 ### ACIT Dashboard Deployment
 
 *   To be able to access the template below, join the
