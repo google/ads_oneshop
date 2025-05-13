@@ -32,19 +32,21 @@ The Ads OneShop project contains two solutions:
         that is, if you don't plan to open up your app directly (i.e., sign in
         page) to people outside your company.
 
-    > [!IMPORTANT]
-    >    Legal entities are limited to one developer token per
-    >    company/email domain. If you already have a token somewhere, you must
-    >    use that token. You must not solicit a developer token from any other
-    >    companies (i.e., you are an agency)
 
-    > [!TIP]
-    >    It does not matter what MCC the Developer Token comes from;
-    >    all it's used for is identifying  which company wrote the calling code.
+> [!IMPORTANT]
+>    Legal entities are limited to one developer token per
+>    company/email domain. If you already have a token somewhere, you must
+>    use that token. You must not solicit a developer token from any other
+>    companies (i.e., you are an agency)
 
-*   **Google Merchant Center**
+> [!TIP]
+>    It does not matter what MCC the Developer Token comes from;
+>    all it's used for is identifying  which company wrote the calling code.
 
-    *   Google Ads & Google Merchant Center accounts must be linked together.
+#### Merchant Center
+
+*   At least standard access to the Merchant Center account, but Admin is preferable, as it would allow more data to be ingested.
+*   Google Ads & Google Merchant Center accounts must be linked together.
 
 ### Core Pipeline Deployment
 
