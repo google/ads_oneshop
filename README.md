@@ -33,14 +33,14 @@ The Ads OneShop project contains two solutions:
         page) to people outside your company.
 
     > [!IMPORTANT]
-        Legal entities are limited to one developer token per
-        company/email domain. If you already have a token somewhere, you must
-        use that token. You must not solicit a developer token from any other
-        companies (i.e., you are an agency)
+    >    Legal entities are limited to one developer token per
+    >    company/email domain. If you already have a token somewhere, you must
+    >    use that token. You must not solicit a developer token from any other
+    >    companies (i.e., you are an agency)
 
     > [!TIP]
-        It does not matter what MCC the Developer Token comes from;
-        all it's used for is identifying which company wrote the calling code.
+    >    It does not matter what MCC the Developer Token comes from;
+    >    all it's used for is identifying  which company wrote the calling code.
 
 *   **Google Merchant Center**
 
