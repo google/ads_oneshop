@@ -53,13 +53,26 @@ WITH
       ${PROJECT_NAME}.${DATASET_NAME}.liasettings AS L,
       L.children AS C
   ),
+  AllShippingData AS (
+    SELECT
+      settings.accountId,
+      settings.services
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings
+    WHERE ARRAY_LENGTH(children) = 0
+    UNION ALL
+    SELECT
+      CH.settings.accountId,
+      CH.settings.services
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS,
+      SS.children AS CH
+  ),
   AccountLevelShipping AS (
     SELECT DISTINCT
-      settings.accountId AS merchant_id,
-      ARRAY_LENGTH(settings.services) > 0 AS has_account_level_shipping,
+      accountId AS merchant_id,
+      ARRAY_LENGTH(services) > 0 AS has_account_level_shipping,
       EXISTS(
         SELECT *
-        FROM SS.settings.services
+        FROM SS.services
         WHERE
           deliveryTime.maxTransitTimeInDays IS NOT NULL
           AND deliveryTime.minTransitTimeInDays IS NOT NULL
@@ -68,7 +81,7 @@ WITH
       ) AS has_account_level_shipping_speed,
       EXISTS(
         SELECT *
-        FROM SS.settings.services
+        FROM SS.services
         WHERE
           deliveryTime.maxTransitTimeInDays IS NOT NULL
           AND deliveryTime.maxHandlingTimeInDays IS NOT NULL
@@ -77,7 +90,7 @@ WITH
       EXISTS(
         SELECT *
         FROM
-          SS.settings.services AS S,
+          SS.services AS S,
           S.rateGroups AS RG,
           RG.mainTable.rows AS RS,
           RS.cells AS C
@@ -87,11 +100,11 @@ WITH
       EXISTS(
         SELECT *
         FROM
-          SS.settings.services AS S,
+          SS.services AS S,
           S.rateGroups AS RG
         WHERE RG.singleValue.flatRate.value = 0
       ) AS has_account_level_free_shipping
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS
+    FROM AllShippingData AS SS
   ),
   EnabledDestinations AS (
     SELECT DISTINCT

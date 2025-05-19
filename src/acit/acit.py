@@ -284,7 +284,7 @@ def _pull_standalone_account_resource(
     acit_mc_output_dir, parent_id, account_id, resource
 ) -> None:
   merchant_api = _get_merchant_center_api()
-  logging.info('...pulling standalone account-level resource %s...' % resource)
+  logging.info('...pulling standalone account-level resource %s...', resource)
   output_file = (
       epath.Path(acit_mc_output_dir) / account_id / resource / 'rows.jsonlines'
   )
@@ -328,7 +328,7 @@ def _pull_standalone_account_resource(
 
 def _pull_leaf_collection(acit_mc_output_dir, account_id, resource):
   merchant_api = _get_merchant_center_api()
-  logging.info('...pulling resource %s...' % resource)
+  logging.info('...pulling resource %s...', resource)
   output_file = (
       epath.Path(acit_mc_output_dir) / account_id / resource / 'rows.jsonlines'
   )
@@ -366,6 +366,44 @@ def _parse_login_customer_ids(customer_ids: list[str]) -> list[tuple[str, str]]:
     customer_id = rest[0] if rest else login_cid
     login_cid_pairs.append((login_cid, customer_id))
   return login_cid_pairs
+
+
+def _list_mca_resource(resource_name, aggregator_id, merchant_api, mc_path):
+  """Lists a resource for an MCA, including all sub-accounts.
+
+  Args:
+    resource_name: The name of the resource to list.
+    aggregator_id: The ID of the MCA.
+    merchant_api: The Merchant Center API client.
+    mc_path: The path to the Merchant Center output directory.
+  """
+  logging.info('Fetching account-level resource %s...', resource_name)
+  parent = {
+      'settings': {
+          'accountId': aggregator_id,
+      },
+      'children': [],
+  }
+
+  for response in resource_downloader.download_resources(
+      client=merchant_api,
+      resource_name=resource_name,
+      # Required to duplicate here
+      params={'merchantId': aggregator_id},
+      parent_resource='',
+      parent_params={},
+      resource_method='list',
+      result_path='resources',
+      metadata={'accountId': aggregator_id},
+      is_scalar=False,
+  ):
+    parent['children'].append({'settings': response})
+
+  output_file = mc_path / aggregator_id / resource_name / 'rows.jsonlines'
+
+  output_file.parent.mkdir(parents=True, exist_ok=True)
+  with output_file.open('w') as f:
+    print(json.dumps(parent), file=f)
 
 
 def main(_):
@@ -406,8 +444,8 @@ def main(_):
 
   # Download ads data
   logging.info(
-      'Ads YAML: %s'
-      % os.getenv('GOOGLE_ADS_CONFIGURATION_FILE_PATH', 'Not set')
+      'Ads YAML: %s',
+      os.getenv('GOOGLE_ADS_CONFIGURATION_FILE_PATH', 'Not set'),
   )
   logging.info('Loading Ads data...')
   # Only load constants once
@@ -420,7 +458,7 @@ def main(_):
   for login_customer_id, customer_id in _parse_login_customer_ids(
       _CUSTOMER_IDS.value
   ):
-    logging.info('Processing Customer ID %s' % customer_id)
+    logging.info('Processing Customer ID %s', customer_id)
     ads_client = client.GoogleAdsClient(
         credentials=creds,
         developer_token=developer_token,
@@ -429,7 +467,7 @@ def main(_):
     ads_client.login_customer_id = login_customer_id
     # constants_gaql will be empty on subsequent invocations
     for resource, query, mode in accounts_gaql + [g for g in constants_gaql]:
-      logging.info('...pulling resource %s...' % resource)
+      logging.info('...pulling resource %s...', resource)
       # NOTE: These directories were previously sharded on login account ID.
       #
       # Since BQ load only supports a single wildcard, we can't use directory
@@ -498,9 +536,10 @@ def main(_):
   for aggregator_id in aggregator_ids.intersection(input_ids):
     for name in acit_account_resources:
       if name == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE:
-        # This shippingsettings.list is failing. Use get below.
+        # shippingsettings has a different behavior and is treated differently
+        _list_mca_resource(name, aggregator_id, merchant_api, mc_path)
         continue
-      logging.info('Fetching account-level resource %s...' % name)
+      logging.info('Fetching account-level resource %s...', name)
       for response in resource_downloader.download_resources(
           client=merchant_api,
           resource_name=name,
@@ -518,7 +557,7 @@ def main(_):
         parent = {'settings': response}
         parent['children'] = children
 
-        logging.info('Fetching subaccount resources %s...' % name)
+        logging.info('Fetching subaccount resources %s...', name)
         for child in resource_downloader.download_resources(
             client=merchant_api,
             resource_name=name,
@@ -547,15 +586,11 @@ def main(_):
   ) as executor:
     future_results: dict[futures.Future[None], str] = {}
     for account_id in leaf_ids | (standalone_ids & input_ids):
-      logging.info('Processing Merchant Center ID %s...' % account_id)
+      logging.info('Processing Merchant Center ID %s...', account_id)
       # We need account-level resources
       parent_id = leaf_to_parent.get(account_id, account_id)
       for resource in acit_account_resources:
-        # TODO(b/305301891): Remove after shippingsettings.list is fixed.
-        if (
-            account_id in standalone_ids
-            or resource == _ACIT_MC_SHIPPINGSETTINGS_RESOURCE
-        ):
+        if account_id in standalone_ids:
           future = executor.submit(
               _pull_standalone_account_resource,
               str(mc_path),
@@ -575,18 +610,16 @@ def main(_):
       api_path = future_results[completed]
       try:
         completed.result()
-        logging.info('Finished loading leaf resource: %s' % (api_path))
+        logging.info('Finished loading leaf resource: %s', api_path)
       except http.HttpError as ex:
-        raise ValueError('Error retrieving resource %s' % (api_path)) from ex
+        raise ValueError('Error retrieving resource %s' % api_path) from ex
 
   unprocessed = input_ids - (leaf_ids | standalone_ids | aggregator_ids)
   if unprocessed:
     logging.warn(
-        (
-            'This credential does not have direct acccess to the following '
-            'input account(s): %s. Some data may be missing. '
-        )
-        % ' ,'.join(unprocessed)
+        'This credential does not have direct access to the following '
+        'input account(s): %s. Some data may be missing. ',
+        ','.join(unprocessed),
     )
   logging.info('Done loading Merchant Center data.')
 
