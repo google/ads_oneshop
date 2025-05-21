@@ -19,12 +19,26 @@ CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_Account_List
     partition_expiration_days = 90)
 AS
 WITH
+  AllLiaSettings AS (
+    SELECT
+      L.settings.account_id,
+      L.settings.country_settings
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.liasettings AS L
+    WHERE ARRAY_LENGTH(L.children) = 0
+    UNION ALL
+    SELECT
+      C.account_id,
+      C.country_settings
+    FROM
+      ${PROJECT_NAME}.${DATASET_NAME}.liasettings AS L,
+      L.children AS C
+  ),
   Lia AS (
     SELECT DISTINCT
-      C.account_id AS merchant_id,
+      L.account_id AS merchant_id,
       EXISTS(
         SELECT 1
-        FROM C.country_settings
+        FROM L.country_settings
         WHERE
           inventory.status = 'active'
           AND inventory.inventory_verification_contact_status = 'active'
@@ -32,26 +46,25 @@ WITH
       ) AS lia_has_lia_implemented,
       EXISTS(
         SELECT 1
-        FROM C.country_settings
+        FROM L.country_settings
         WHERE
           hosted_local_storefront_active
           OR omnichannel_experience.lsf_type IN ('mhlsfBasic', 'mhlsfFull')
       ) AS lia_has_mhlsf_implemented,
       EXISTS(
         SELECT 1
-        FROM C.country_settings
+        FROM L.country_settings
         WHERE
           store_pickup_active
           OR ARRAY_LENGTH(omnichannel_experience.pickup_types) > 0
       ) AS lia_has_store_pickup_implemented,
       EXISTS(
         SELECT 1
-        FROM C.country_settings
+        FROM L.country_settings
         WHERE on_display_to_order.status = 'active'
       ) AS lia_has_odo_implemented
     FROM
-      ${PROJECT_NAME}.${DATASET_NAME}.liasettings AS L,
-      L.children AS C
+      AllLiaSettings AS L
   ),
   AllShippingData AS (
     SELECT
@@ -63,7 +76,8 @@ WITH
     SELECT
       CH.settings.accountId,
       CH.settings.services
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS,
+    FROM
+      ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS,
       SS.children AS CH
   ),
   AccountLevelShipping AS (
@@ -96,14 +110,14 @@ WITH
           RS.cells AS C
         WHERE
           C.flatRate.value = 0
-      ) OR
-      EXISTS(
-        SELECT *
-        FROM
-          SS.services AS S,
-          S.rateGroups AS RG
-        WHERE RG.singleValue.flatRate.value = 0
-      ) AS has_account_level_free_shipping
+      )
+        OR EXISTS(
+          SELECT *
+          FROM
+            SS.services AS S,
+            S.rateGroups AS RG
+          WHERE RG.singleValue.flatRate.value = 0
+        ) AS has_account_level_free_shipping
     FROM AllShippingData AS SS
   ),
   EnabledDestinations AS (
@@ -118,51 +132,78 @@ WITH
       ${PROJECT_NAME}.${DATASET_NAME}.products AS P,
       P.status.destination_statuses AS DS
   ),
-  AccountNames AS (
-    SELECT DISTINCT
-      C.id AS merchant_id,
-      C.name AS merchant_name,
-      A.settings.id AS aggregator_id,
-      A.settings.name AS aggregator_name,
-      CONCAT(C.name, ' (', C.id, ')') AS merchant_name_with_id
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A, A.children AS C
-  ),
-  Account AS (
-    SELECT DISTINCT
-      C.id AS merchant_id,
-      C.name AS merchant_name,
-      A.settings.id AS aggregator_id,
-      A.settings.name AS aggregator_name,
+  AllAccounts AS (
+    SELECT
+      A.settings.id AS merchant_id,
+      A.settings.name AS merchant_name,
+      0 AS aggregator_id,
+      NULL AS aggregator_name,
       IFNULL(
-        C.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements,
-        A.settings.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements)
+        A.settings.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements,
+        FALSE)
         AS has_image_aiu_enabled,
       IFNULL(
+        A.settings.automaticImprovements.itemUpdates.effectiveAllowStrictAvailabilityUpdates
+          OR A.settings.automaticImprovements.itemUpdates.effectiveAllowAvailabilityUpdates,
+        FALSE)
+        AS has_availability_aiu_enabled,
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A
+    WHERE ARRAY_LENGTH(A.children) = 0
+    UNION ALL
+    SELECT
+      C.id AS merchant_id,
+      C.name AS merchant_name,
+      A.settings.id AS aggregator_id,
+      A.settings.name AS aggregator_name,
+      COALESCE(
+        C.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements,
+        A.settings.automaticImprovements.imageImprovements.effectiveAllowAutomaticImageImprovements,
+        FALSE)
+        AS has_image_aiu_enabled,
+      COALESCE(
         (
           C.automaticImprovements.itemUpdates.effectiveAllowStrictAvailabilityUpdates
           OR C.automaticImprovements.itemUpdates.effectiveAllowAvailabilityUpdates),
         (
           A.settings.automaticImprovements.itemUpdates.effectiveAllowStrictAvailabilityUpdates
-          OR A.settings.automaticImprovements.itemUpdates.effectiveAllowAvailabilityUpdates))
-        AS has_availability_aiu_enabled,
-      L.lia_has_lia_implemented,
-      L.lia_has_mhlsf_implemented,
-      L.lia_has_store_pickup_implemented,
-      L.lia_has_odo_implemented,
-      ALS.has_account_level_shipping,
-      ED.has_free_listings_enabled,
-      ALS.has_account_level_shipping_speed,
-      ALS.has_account_level_fast_shipping,
-      ALS.has_account_level_free_shipping
+          OR A.settings.automaticImprovements.itemUpdates.effectiveAllowAvailabilityUpdates),
+        FALSE) AS has_availability_aiu_enabled,
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A,
       A.children AS C
+  ),
+  AccountNames AS (
+    SELECT DISTINCT
+      A.merchant_id,
+      A.merchant_name,
+      A.aggregator_id,
+      A.aggregator_name,
+      CONCAT(A.merchant_name, ' (', A.merchant_id, ')') AS merchant_name_with_id
+    FROM AllAccounts AS A
+  ),
+  Account AS (
+    SELECT DISTINCT
+      A.merchant_id,
+      A.aggregator_id,
+      IFNULL(A.has_image_aiu_enabled, FALSE) AS has_image_aiu_enabled,
+      IFNULL(A.has_availability_aiu_enabled, FALSE) AS has_availability_aiu_enabled,
+      IFNULL(L.lia_has_lia_implemented, FALSE) AS lia_has_lia_implemented,
+      IFNULL(L.lia_has_mhlsf_implemented, FALSE) AS lia_has_mhlsf_implemented,
+      IFNULL(L.lia_has_store_pickup_implemented, FALSE) AS lia_has_store_pickup_implemented,
+      IFNULL(L.lia_has_odo_implemented, FALSE) AS lia_has_odo_implemented,
+      IFNULL(ALS.has_account_level_shipping, FALSE) AS has_account_level_shipping,
+      IFNULL(ED.has_free_listings_enabled, FALSE) AS has_free_listings_enabled,
+      IFNULL(ALS.has_account_level_shipping_speed, FALSE) AS has_account_level_shipping_speed,
+      IFNULL(ALS.has_account_level_fast_shipping, FALSE) AS has_account_level_fast_shipping,
+      IFNULL(ALS.has_account_level_free_shipping, FALSE) AS has_account_level_free_shipping,
+    FROM
+      AllAccounts AS A
     LEFT JOIN Lia AS L
-      ON L.merchant_id = C.id
+      ON L.merchant_id = A.merchant_id
     LEFT JOIN AccountLevelShipping AS ALS
-      ON ALS.merchant_id = C.id
+      ON ALS.merchant_id = A.merchant_id
     LEFT JOIN EnabledDestinations AS ED
-      ON ED.merchant_id = C.id
+      ON ED.merchant_id = A.merchant_id
   ),
   HasFreeListings AS (
     SELECT DISTINCT

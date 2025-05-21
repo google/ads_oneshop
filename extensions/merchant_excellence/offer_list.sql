@@ -19,22 +19,39 @@ CREATE OR REPLACE TABLE ${PROJECT_NAME}.${DATASET_NAME}.MEX_Offer_List
     partition_expiration_days = 60)
 AS
 WITH
-  AccountNames AS (
-    SELECT DISTINCT
+  AllAccounts AS (
+    SELECT
+      A.settings.id AS merchant_id,
+      A.settings.name AS merchant_name,
+      0 AS aggregator_id,
+      NULL AS aggregator_name,
+    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A
+    WHERE ARRAY_LENGTH(A.children) = 0
+    UNION ALL
+    SELECT
       C.id AS merchant_id,
       C.name AS merchant_name,
       A.settings.id AS aggregator_id,
       A.settings.name AS aggregator_name,
-      CONCAT(C.name, ' (', C.id, ')') AS merchant_name_with_id
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A, A.children AS C
-  ),
-  Account AS (
-    SELECT DISTINCT
-      C.id AS merchant_id,
-      A.settings.id AS aggregator_id,
     FROM
       ${PROJECT_NAME}.${DATASET_NAME}.accounts AS A,
       A.children AS C
+  ),
+  AccountNames AS (
+    SELECT DISTINCT
+      A.merchant_id,
+      A.merchant_name,
+      A.aggregator_id,
+      A.aggregator_name,
+      CONCAT(A.merchant_name, ' (', A.merchant_id, ')') AS merchant_name_with_id
+    FROM AllAccounts AS A
+  ),
+  Account AS (
+    SELECT DISTINCT
+      A.merchant_id,
+      A.aggregator_id,
+    FROM
+      AllAccounts AS A
   ),
   AdsStats AS (
     SELECT
@@ -135,7 +152,8 @@ WITH
     SELECT
       CH.settings.accountId,
       CH.settings.services
-    FROM ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS,
+    FROM
+      ${PROJECT_NAME}.${DATASET_NAME}.shippingsettings AS SS,
       SS.children AS CH
   ),
   AccountLevelShipping AS (
@@ -168,14 +186,14 @@ WITH
           RS.cells AS C
         WHERE
           C.flatRate.value = 0
-      ) OR
-      EXISTS(
-        SELECT *
-        FROM
-          SS.services AS S,
-          S.rateGroups AS RG
-        WHERE RG.singleValue.flatRate.value = 0
-      ) AS has_account_level_free_shipping
+      )
+        OR EXISTS(
+          SELECT *
+          FROM
+            SS.services AS S,
+            S.rateGroups AS RG
+          WHERE RG.singleValue.flatRate.value = 0
+        ) AS has_account_level_free_shipping
     FROM AllShippingData AS SS
   ),
   Products AS (
