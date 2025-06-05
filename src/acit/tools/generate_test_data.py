@@ -36,7 +36,7 @@ import random
 import itertools
 import enum
 
-from google.ads.googleads.v17.services.types import google_ads_service
+from google.ads.googleads.v19.services.types import google_ads_service
 
 import sys
 

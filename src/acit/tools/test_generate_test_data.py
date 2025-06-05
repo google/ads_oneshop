@@ -5,8 +5,6 @@ import random
 import math
 from absl.testing import absltest
 
-from google.ads.googleads.v17.services.types import google_ads_service
-
 
 class TestGenerator(absltest.TestCase):
 

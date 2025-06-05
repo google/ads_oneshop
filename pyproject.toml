@@ -1,7 +1,7 @@
 [project]
 name = 'gtech-oneshop'
 version = '1.0'
-requires-python = '>= 3.11'
+requires-python = '>= 3.12'
 dependencies = [
   'google-ads',
   'google-api-python-client',
@@ -12,8 +12,7 @@ dependencies = [
   'google-cloud-storage',
   'six',
   'absl-py',
-  'apache-beam[gcp]==2.60.0',
-  'pyarrow-hotfix',
+  'apache-beam[gcp]==2.65.0',
   'protobuf',
   'etils[epath-gcs]',
   'google-cloud-secret-manager',
@@ -26,7 +25,7 @@ dependencies = [
 requires = [
   'build',
   'grpcio-tools',
-  'apache-beam==2.60.0',
+  'apache-beam==2.65.0',
   'protobuf',
   'importlib-resources',
   'typing-extensions',

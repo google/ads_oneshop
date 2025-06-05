@@ -14,7 +14,7 @@
 
 from absl.testing import parameterized
 
-from google.ads.googleads.v17.services.types import google_ads_service
+from google.ads.googleads.v19.services.types import google_ads_service
 
 from acit import shopping
 

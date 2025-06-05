@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/beam_python3.11_sdk:2.60.0
+FROM apache/beam_python3.12_sdk:2.65.0
 
 WORKDIR /src/
 

@@ -18,7 +18,7 @@ import json
 import multiprocessing as mp
 import os
 import sys
-from typing import Set, Any
+from typing import Any, Set
 
 from absl import app
 from absl import flags
@@ -38,7 +38,7 @@ if sys.version_info < (3, 9, 0):
   # Required for union operators
   raise RuntimeError('Python 3.9 or greater required.')
 
-ADS_API_VERSION = 'v17'
+ADS_API_VERSION = 'v19'
 
 _OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
 

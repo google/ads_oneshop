@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Uses Python 3.11
-FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:500.0.0-stable
+FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:525.0.0-stable
 
 # gcloud image doesn't include certs or envsubst
 RUN \

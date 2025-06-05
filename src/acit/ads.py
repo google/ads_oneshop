@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from typing import cast, Iterable
-from google.ads.googleads.v17.services.types import google_ads_service
-from google.ads.googleads.v17.services.services.google_ads_service import client as service
 from google.ads.googleads import client
+from google.ads.googleads.v19.services.services.google_ads_service import client as service
+from google.ads.googleads.v19.services.types import google_ads_service
 
 
 def query(

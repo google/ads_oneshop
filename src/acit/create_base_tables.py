@@ -47,9 +47,6 @@ from apache_beam.io import fileio
 from apache_beam.options import pipeline_options
 from apache_beam import pvalue
 
-# TODO(https://github.com/apache/beam/issues/29392): Remove after Beam 2.52.0 is released
-import pyarrow_hotfix
-
 # Omit variable declaration so we can pickle __main__.
 flags.DEFINE_string(
     'source_dir', '/tmp/acit/*', 'The root path for all source files.'
@@ -229,8 +226,8 @@ def main(argv):
 
       return json_format.MessageToDict(
           msg,
+          always_print_fields_with_no_presence=True,
           preserving_proto_field_name=True,
-          including_default_value_fields=True,
       )
 
     # Process LIA settings
