@@ -174,6 +174,9 @@ def dimension_matches_product(
       # Ad criteria is too granular
       return False
     category_to_match = taxonomy_tokens[taxonomy_index]
+    # Campaigns before 2019 may have obsolete category IDs
+    if id_ not in category_names_by_id:
+      return False
     category = category_names_by_id[id_]
     return category_to_match == category
 
