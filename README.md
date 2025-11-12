@@ -9,6 +9,8 @@ By implementing these recommendations, merchants can improve offer quality,
 reduce disapprovals, increase advanced feature adoption and drive better auction
 performance.
 
+This solution currently uses the Content API, and needs to be updated to work with the [Merchant API](https://developers.google.com/merchant/api/reference/rest). We're currently working to update Merchant Excellence for Partners to work with Merchant API. Launch date in H1 2026.
+
 ### Solutions Included
 
 The Ads OneShop project contains two solutions:
