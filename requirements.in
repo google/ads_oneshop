@@ -15,6 +15,8 @@ etils[epath-gcs]
 google-cloud-secret-manager
 PyYAML
 google-crc32c
+google-shopping-merchant-promotions
+google-shopping-merchant-reports
 # pin for artifact registry
 regex==2024.11.6
 typing_extensions

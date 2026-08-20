@@ -15,7 +15,7 @@
 steps:
   # Bazel runs as 'ubuntu', and needs the volume to be writable
   - name: 'ubuntu'
-    args: ['chmod', '-R', '777', '/output_user_root']
+    args: ['bash', '-c', 'chmod -R 777 /output_user_root && chmod 777 /workspace']
     volumes:
       - name: 'output-user-root'
         path: '/output_user_root'

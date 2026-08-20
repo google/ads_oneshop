@@ -128,8 +128,18 @@ WITH
       account_id AS merchant_id,
       COUNTIF(
         COALESCE(
-          SAFE_CAST(LEFT(SPLIT(P.attributes.promotion_effective_period, '/')[SAFE_OFFSET(1)], 10) AS DATE),
-          SAFE_CAST(LEFT(SPLIT(P.attributes.promotion_effective_period, '/')[SAFE_OFFSET(0)], 10) AS DATE)
+          SAFE.DATE(
+            P.attributes.promotion_effective_time_period.end_time
+          ),
+          SAFE.DATE(
+            P.attributes.promotion_effective_time_period.start_time
+          ),
+          SAFE.DATE(
+            P.attributes.promotion_display_time_period.end_time
+          ),
+          SAFE.DATE(
+            P.attributes.promotion_display_time_period.start_time
+          )
         ) >= DATE_SUB(CURRENT_DATE(), INTERVAL 365 DAY)
       ) AS active_promotions_count
     FROM
@@ -138,17 +148,20 @@ WITH
     GROUP BY 1
   ),
   Reports AS (
-    SELECT DISTINCT
+    SELECT
       account_id AS merchant_id,
-      IFNULL(has_market_insights, FALSE) AS has_market_insights,
-      IFNULL(ARRAY_LENGTH(structured_data_issues) >= 0, FALSE) AS uses_structured_data
+      LOGICAL_OR(IFNULL(has_market_insights, FALSE)) AS has_market_insights,
+      LOGICAL_OR(
+        IFNULL(ARRAY_LENGTH(structured_data_issues) > 0, FALSE)
+      ) AS uses_structured_data
     FROM ${PROJECT_NAME}.${DATASET_NAME}.reports
+    GROUP BY 1
   ),
   CurbsidePickup AS (
     SELECT
       CAST(account_id AS INT64) AS merchant_id,
       LOGICAL_OR(
-        UPPER(COALESCE(channel, product.channel, '')) = 'LOCAL'
+        UPPER(COALESCE(channel, '')) = 'LOCAL'
         AND JSON_VALUE(TO_JSON(product.product_attributes), '$.pickup_method') = 'curbside'
       ) AS lia_has_curbside_pickup_implemented
     FROM ${PROJECT_NAME}.${DATASET_NAME}.products
@@ -332,7 +345,7 @@ WITH
   ProductStatus AS (
     SELECT
       account_id AS merchant_id,
-      COALESCE(P.channel, P.product.channel, 'online') AS channel,
+      COALESCE(P.channel, 'online') AS channel,
       offer_id AS product_id,
       P.status.item_level_issues,
       ARRAY(
@@ -1975,7 +1988,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      'has merchant promotions enabled' AS metric_name,
+      'has Merchant Promotions enabled' AS metric_name,
       1 AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
@@ -1996,7 +2009,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      'has product reviews enabled' AS metric_name,
+      'has Product Ratings enabled' AS metric_name,
       1 AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE
@@ -2141,7 +2154,7 @@ WITH
       custom_label_3,
       custom_label_4,
       brand,
-      'LIA: has curbside pickup implemented' AS metric_name,
+      'LIA: has Curbside Pickup implemented' AS metric_name,
       1 AS metric_value
     FROM ${PROJECT_NAME}.${DATASET_NAME}._tmp_Products
     WHERE

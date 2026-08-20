@@ -35,45 +35,24 @@ import json
 from typing import Iterable, Tuple
 
 from absl import logging
+from acit import constants
 from acit.constants import METADATA_KEY
 from etils import epath
 from google.auth import credentials as _credentials
 from google.protobuf import json_format
 from google.shopping import merchant_products_v1 as mp
 
-_PAGE_SIZE = 250
-
 
 def _list_account_products(
     client: mp.ProductsServiceClient, account_id: str
-    ) -> Iterable[mp.Product]:
-  """Yields all v1 products for one account.
-
-  Yields protobuf messages, not dicts; the caller serializes them
-  as it streams them to disk.
-
-  This is a *generator*, deliberately. The GAPIC pager already fetches pages
-  lazily, so yielding each product as it arrives keeps peak memory at
-  roughly one product per worker thread. Accumulating into a list instead
-  would hold the entire catalog at once -- a large merchant can have millions
-  of products, and with `--mc_max_workers` accounts downloading concurrently
-  that is an OOM rather than a slowdown.
-
-  Callers must therefore consume the result exactly once, while streaming it
-  to its destination (see `download_products._process`).
-
-  Args:
-    client: The API client instance used to fetch the product catalog.
-    account_id: The ID of the leaf or standalone merchant account.
-
-  Yields:
-    `Product` messages, one per offer in the account's catalog.
-  """
+) -> Iterable[mp.Product]:
+  """Yields all v1 products for one account."""
   parent = f'accounts/{account_id}'
-  pager = client.list_products(request=mp.ListProductsRequest(
-      parent=parent, page_size=_PAGE_SIZE))
-  for product in pager:
-    yield product
+  return client.list_products(
+      request=mp.ListProductsRequest(
+          parent=parent, page_size=constants.PAGE_SIZE
+      )
+  )
 
 
 def download_products(credentials: _credentials.Credentials,

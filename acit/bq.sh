@@ -61,7 +61,7 @@ bq::create_dataset() {
   curl -s -X POST "https://bigquery.googleapis.com/bigquery/v2/projects/${PROJECT_NAME}/datasets" \
     -H "Authorization: Bearer ${CLOUDSDK_AUTH_ACCESS_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{\"datasetReference\": {\"datasetId\": \"${DATASET_NAME}\"}}, {\"location\": \"${DATASET_LOCATION}\"}" > /dev/null || true
+    -d "{\"datasetReference\": {\"datasetId\": \"${DATASET_NAME}\"}, \"location\": \"${DATASET_LOCATION}\"}" > /dev/null || true
 }
 
 # Loads data from a source URI into a BigQuery table.
@@ -296,7 +296,13 @@ EOF
 EOF
 )
   fi
-  echo "${job_response}" | jq -r '.jobReference.jobId'
+  local res_job_id
+  res_job_id=$(echo "${job_response}" | jq -r '.jobReference.jobId')
+  if [[ -z "${res_job_id}" || "${res_job_id}" == "null" ]]; then
+    echo "BigQuery API Error Response: ${job_response}" >&2
+    return 1
+  fi
+  echo "${res_job_id}"
 }
 
 # Waits for a BigQuery job to complete.
@@ -326,6 +332,8 @@ bq::_poll_job() {
       if [[ $(echo "${job_status}" | jq -r '.status.errorResult') != "null" ]]; then
         echo "Job failed:" >&2
         echo "${job_status}" | jq -r '.status.errorResult.message' >&2
+        echo "Detailed errors:" >&2
+        echo "${job_status}" | jq -r '.status.errors[]?.message' >&2
         return 1
       fi
       return 0

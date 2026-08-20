@@ -263,8 +263,14 @@ def run_query(
         })
 
       for completed in futures.as_completed(future_results):
-        # Raise an exception if one occurred
-        completed.result()
+        try:
+          completed.result()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+          leaf_id = future_results.get(completed)
+          logging.warning(
+              'Failed to extract Ads data for Customer ID %s: %s', leaf_id, e
+          )
+  # pylint: disable=broad-exception-caught
   except Exception as executor_exception:
     logging.exception(executor_exception)
 

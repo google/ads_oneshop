@@ -84,7 +84,7 @@ WITH
   ProductStatus AS (
     SELECT
       account_id AS merchant_id,
-      COALESCE(P.channel, P.product.channel, 'online') AS channel,
+      COALESCE(P.channel, 'online') AS channel,
       offer_id AS product_id,
       P.status.item_level_issues,
       ARRAY(
@@ -226,6 +226,8 @@ WITH
       P.product.product_attributes.cost_of_goods_sold,
       P.product.product_attributes.condition,
       JSON_QUERY(TO_JSON(P.product.product_attributes), '$.installment') AS installment,
+      JSON_VALUE(TO_JSON(P.product.product_attributes), '$.pickup_method') AS pickup_method,
+      P.status.destination_statuses,
       (P.has_shopping_targeting OR P.has_performance_max_targeting) AS has_targeting,
       IFNULL(AD.impressions_last30days, 0) > 0 AS had_impressions,
       IFNULL(AD.clicks_last30days, 0) > 0 AS had_clicks,
@@ -764,6 +766,27 @@ WITH
     WHERE
       IFNULL(cost_of_goods_sold.amount_micros, 0) = 0
   ),
+  OffersWithLiaNotEligible AS (
+    SELECT DISTINCT
+      merchant_id,
+      aggregator_id,
+      channel,
+      item_id,
+      targeted_country,
+      language,
+      'LIA: % eligible items' AS metric_name,
+      'LIA not eligible' AS data_quality_flag,
+    FROM Products
+    WHERE
+      channel = 'local'
+      AND NOT EXISTS(
+        SELECT 1
+        FROM UNNEST(destination_statuses) AS ds
+        WHERE
+          ds.reporting_context = 'LOCAL_INVENTORY_ADS'
+          AND ARRAY_LENGTH(ds.approved_countries) > 0
+      )
+  ),
   OffersWithTitle15 AS (
     SELECT DISTINCT
       merchant_id, aggregator_id, channel, item_id, targeted_country, language,
@@ -790,6 +813,8 @@ WITH
   ),
   AllMetrics AS (
     SELECT * FROM DisapprovedOffers
+    UNION ALL
+    SELECT * FROM OffersWithLiaNotEligible
     UNION ALL
     SELECT * FROM OffersWithBrand
     UNION ALL

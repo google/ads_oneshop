@@ -40,11 +40,11 @@ LIA: % eligible items,0.450,2026-08-18
 % items with impressions,0.350,2026-08-18
 LIA: has MHLSF implemented,1.000,2026-08-18
 LIA: has Store Pickup implemented,1.000,2026-08-18
-LIA: has curbside pickup implemented,1.000,2026-08-18
+LIA: has Curbside Pickup implemented,1.000,2026-08-18
 LIA: On display to order implemented,1.000,2026-08-18
 active promotions last year,5.000,2026-08-18
-has merchant promotions enabled,1.000,2026-08-18
-has product reviews enabled,1.000,2026-08-18
+has Merchant Promotions enabled,1.000,2026-08-18
+has Product Ratings enabled,1.000,2026-08-18
 % items with sale price,0.250,2026-08-18
 % items with 3 or more additional images,0.550,2026-08-18
 % items with shipping speed,0.950,2026-08-18

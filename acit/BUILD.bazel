@@ -179,6 +179,56 @@ py_test(
     ],
 )
 
+py_library(
+    name = "merchant_programs_lib",
+    srcs = ["merchant_programs.py"],
+    deps = [
+        "//acit/api/v0:schema_py_pb2",
+        "@acit_deps//absl_py",
+        "@acit_deps//etils",
+        "@acit_deps//google_api_core",
+        "@acit_deps//google_shopping_merchant_accounts",
+        "@acit_deps//protobuf",
+    ],
+)
+
+py_library(
+    name = "merchant_returns_lib",
+    srcs = ["merchant_returns.py"],
+    deps = [
+        "//acit/api/v0:schema_py_pb2",
+        "@acit_deps//absl_py",
+        "@acit_deps//etils",
+        "@acit_deps//google_api_core",
+        "@acit_deps//google_shopping_merchant_accounts",
+        "@acit_deps//protobuf",
+    ],
+)
+
+py_library(
+    name = "merchant_promotions_lib",
+    srcs = ["merchant_promotions.py"],
+    deps = [
+        "//acit/api/v0:schema_py_pb2",
+        "@acit_deps//absl_py",
+        "@acit_deps//etils",
+        "@acit_deps//google_api_core",
+        "@acit_deps//google_shopping_merchant_promotions",
+        "@acit_deps//protobuf",
+    ],
+)
+
+py_library(
+    name = "merchant_reports_lib",
+    srcs = ["merchant_reports.py"],
+    deps = [
+        "@acit_deps//absl_py",
+        "@acit_deps//etils",
+        "@acit_deps//google_api_core",
+        "@acit_deps//google_shopping_merchant_reports",
+    ],
+)
+
 py_binary(
     name = "acit",
     srcs = ["acit.py"],
@@ -188,6 +238,10 @@ py_binary(
         ":merchant_accounts_lib",
         ":merchant_lia_lib",
         ":merchant_products_lib",
+        ":merchant_programs_lib",
+        ":merchant_promotions_lib",
+        ":merchant_reports_lib",
+        ":merchant_returns_lib",
         ":merchant_shipping_lib",
         ":resource_downloader_lib",
         "@acit_deps//absl_py",

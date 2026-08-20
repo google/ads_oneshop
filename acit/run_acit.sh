@@ -151,6 +151,10 @@ upload_to_bq() {
     if [[ "${ADMIN}" = true ]]; then
       local shippingsettings_path="${SINKS_DIR}/shippingsettings.jsonlines-*"
       local liasettings_path="${SINKS_DIR}/liasettings.jsonlines-*"
+      local programs_path="${SOURCES_DIR}/merchant_center/*/programs/rows.jsonlines"
+      local returns_path="${SOURCES_DIR}/merchant_center/*/returns/rows.jsonlines"
+      local promotions_path="${SOURCES_DIR}/merchant_center/*/promotions/rows.jsonlines"
+      local reports_path="${SOURCES_DIR}/merchant_center/*/reports/rows.jsonlines"
     fi
     local performance_path="${SOURCES_DIR}/ads/all/shopping_performance_view/*rows.jsonlines"
     local language_path="${SOURCES_DIR}/ads/all/language_constant/*rows.jsonlines"
@@ -164,6 +168,18 @@ upload_to_bq() {
       cat $(find "${SINKS_DIR}" -type f | grep shippingsettings) > "${shippingsettings_path}"
       local liasettings_path="${BQ_DIR}/liasettings.jsonlines"
       cat $(find "${SINKS_DIR}" -type f | grep liasettings) > "${liasettings_path}"
+      local programs_path="${BQ_DIR}/programs.jsonlines"
+      local prog_files=$(find "${SOURCES_DIR}" -type f | grep programs || true)
+      if [[ -n "${prog_files}" ]]; then cat ${prog_files} > "${programs_path}"; else touch "${programs_path}"; fi
+      local returns_path="${BQ_DIR}/returns.jsonlines"
+      local ret_files=$(find "${SOURCES_DIR}" -type f | grep returns || true)
+      if [[ -n "${ret_files}" ]]; then cat ${ret_files} > "${returns_path}"; else touch "${returns_path}"; fi
+      local promotions_path="${BQ_DIR}/promotions.jsonlines"
+      local promo_files=$(find "${SOURCES_DIR}" -type f | grep promotions || true)
+      if [[ -n "${promo_files}" ]]; then cat ${promo_files} > "${promotions_path}"; else touch "${promotions_path}"; fi
+      local reports_path="${BQ_DIR}/reports.jsonlines"
+      local rep_files=$(find "${SOURCES_DIR}" -type f | grep reports || true)
+      if [[ -n "${rep_files}" ]]; then cat ${rep_files} > "${reports_path}"; else touch "${reports_path}"; fi
     fi
     local performance_path="${BQ_DIR}/performance.jsonlines"
     cat $(find "${SOURCES_DIR}" -type f | grep performance) > "${performance_path}"
@@ -197,6 +213,34 @@ upload_to_bq() {
       "NEWLINE_DELIMITED_JSON" \
       "${ttl}" \
       "$(rlocation ads_oneshop/acit/api/v0/storage/liasettings.schema)"
+
+    bq::load \
+      "${programs_path}" \
+      "programs" \
+      "NEWLINE_DELIMITED_JSON" \
+      "${ttl}" \
+      "$(rlocation ads_oneshop/acit/api/v0/storage/programs.schema)"
+
+    bq::load \
+      "${returns_path}" \
+      "returns" \
+      "NEWLINE_DELIMITED_JSON" \
+      "${ttl}" \
+      "$(rlocation ads_oneshop/acit/api/v0/storage/returns.schema)"
+
+    bq::load \
+      "${promotions_path}" \
+      "promotions" \
+      "NEWLINE_DELIMITED_JSON" \
+      "${ttl}" \
+      "$(rlocation ads_oneshop/acit/api/v0/storage/promotions.schema)"
+
+    bq::load \
+      "${reports_path}" \
+      "reports" \
+      "NEWLINE_DELIMITED_JSON" \
+      "${ttl}" \
+      "$(rlocation ads_oneshop/acit/api/v0/storage/reports.schema)"
   fi
 
   bq::load \

@@ -20,10 +20,15 @@ from typing import Set
 from absl import app
 from absl import flags
 from absl import logging
+from acit import constants
 from acit import gaql
 from acit import merchant_accounts
 from acit import merchant_lia
 from acit import merchant_products
+from acit import merchant_programs
+from acit import merchant_promotions
+from acit import merchant_reports
+from acit import merchant_returns
 from acit import merchant_shipping
 from etils import epath
 from google import auth
@@ -74,11 +79,12 @@ _VALIDATE_ONLY = flags.DEFINE_boolean(
 
 _MC_MAX_WORKERS = flags.DEFINE_integer(
     'mc_max_workers',
-    8,
+    constants.DEFAULT_MAX_WORKERS,
     (
         'Max concurrent worker threads used by each Merchant API v1 '
-        'ingestion stage (accounts, products, LIA, shipping). Passed '
-        'explicitly to every stage so they stay consistent with each other.'
+        'ingestion stage (accounts, products, LIA, shipping, programs, '
+        'promotions, returns, reports). Passed explicitly to every stage so '
+        'they stay consistent with each other.'
     ),
 )
 
@@ -181,7 +187,8 @@ FROM asset_group_listing_group_filter
 WHERE
   asset_group.status = 'ENABLED'
   AND campaign.status = 'ENABLED'
-  AND asset_group_listing_group_filter.type IN ('UNIT_INCLUDED', 'UNIT_EXCLUDED')
+  AND asset_group_listing_group_filter.type
+    IN ('UNIT_INCLUDED', 'UNIT_EXCLUDED')
 """
 
 _GAQL_LANGUAGE_CONSTANTS = """
@@ -402,6 +409,18 @@ def main(_):
   if _ADMIN_RIGHTS.value:
     merchant_shipping.download_shipping_settings(
         creds, product_account_ids, mc_path, max_workers=_MC_MAX_WORKERS.value)
+    merchant_programs.download_programs(
+        creds, product_account_ids, mc_path, max_workers=_MC_MAX_WORKERS.value
+    )
+    merchant_returns.download_returns(
+        creds, product_account_ids, mc_path, max_workers=_MC_MAX_WORKERS.value
+    )
+    merchant_promotions.download_promotions(
+        creds, product_account_ids, mc_path, max_workers=_MC_MAX_WORKERS.value
+    )
+    merchant_reports.download_reports(
+        creds, product_account_ids, mc_path, max_workers=_MC_MAX_WORKERS.value
+    )
 
   unprocessed = input_ids - (leaf_ids | standalone_ids | aggregator_ids)
   if unprocessed:

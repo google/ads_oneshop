@@ -45,11 +45,13 @@ extract_proto_descriptors(
     packages = [
         "google.shopping.merchant_accounts_v1",
         "google.shopping.merchant_products_v1",
+        "google.shopping.merchant_promotions_v1",
         "google.shopping.type",
     ],
     deps = [
         "@acit_deps//google_shopping_merchant_accounts",
         "@acit_deps//google_shopping_merchant_products",
+        "@acit_deps//google_shopping_merchant_promotions",
         "@acit_deps//google_shopping_type",
     ],
 )

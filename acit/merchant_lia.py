@@ -40,6 +40,7 @@ import json
 from typing import Iterable, List, Tuple
 
 from absl import logging
+from acit import constants
 from acit.api.v0.storage import schema_pb2
 from acit.constants import METADATA_KEY
 from etils import epath
@@ -47,8 +48,6 @@ from google.api_core import exceptions as gax_exceptions
 from google.auth import credentials as _credentials
 from google.protobuf import json_format
 from google.shopping import merchant_accounts_v1 as ma
-
-_PAGE_SIZE = 250
 
 
 def _list_account_omnichannel_settings(
@@ -72,7 +71,10 @@ def _list_account_omnichannel_settings(
   try:
     pager = client.list_omnichannel_settings(
         request=ma.ListOmnichannelSettingsRequest(
-            parent=parent, page_size=_PAGE_SIZE))
+            parent=parent, page_size=constants.PAGE_SIZE
+        )
+    )
+    return list(pager)
   except gax_exceptions.PermissionDenied:
     # Aggregators/MCAs are not valid parents
     # "only subaccounts and standalone
@@ -83,8 +85,6 @@ def _list_account_omnichannel_settings(
     return None
   except gax_exceptions.NotFound:
     return []
-
-  return list(pager)
 
 
 def download_omnichannel_settings(

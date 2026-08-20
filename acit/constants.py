@@ -15,3 +15,9 @@
 
 # Key stamped onto every row so downstream code knows the source account.
 METADATA_KEY = 'downloaderMetadata'
+
+# Standard page size for Merchant API list requests.
+PAGE_SIZE = 250
+
+# Default thread concurrency for multi-account downloads.
+DEFAULT_MAX_WORKERS = 8

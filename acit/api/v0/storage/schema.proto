@@ -19,6 +19,7 @@ package acit.api.v0.storage;
 import "bq_table.proto";
 import "google/shopping/merchant_products_v1/types/products.proto";
 import "google/shopping/merchant_products_v1/types/products_common.proto";
+import "google/shopping/merchant_promotions_v1/types/promotions.proto";
 import "google/shopping/merchant_accounts_v1/types/accountrelationships.proto";
 import "google/shopping/merchant_accounts_v1/types/accountservices.proto";
 import "google/shopping/merchant_accounts_v1/types/automaticimprovements.proto";
@@ -26,6 +27,7 @@ import "google/shopping/merchant_accounts_v1/types/businessidentity.proto";
 import "google/shopping/merchant_accounts_v1/types/businessinfo.proto";
 import "google/shopping/merchant_accounts_v1/types/homepage.proto";
 import "google/shopping/merchant_accounts_v1/types/omnichannelsettings.proto";
+import "google/shopping/merchant_accounts_v1/types/online_return_policy.proto";
 import "google/shopping/merchant_accounts_v1/types/programs.proto";
 import "google/shopping/merchant_accounts_v1/types/shippingsettings.proto";
 import "google/shopping/merchant_accounts_v1/types/user.proto";
@@ -137,4 +139,61 @@ message Account {
   repeated google.shopping.merchant.accounts.v1.AccountRelationship account_relationships = 14;
   repeated AccountServiceRow account_services = 15;
   repeated google.shopping.merchant.accounts.v1.Program programs = 16;
+}
+
+// === Programs Settings ===
+message ProgramsSettings {
+  option (gen_bq_schema.bigquery_opts).table_name = "programs";
+  optional int64 account_id = 1;
+  repeated google.shopping.merchant.accounts.v1.Program programs = 2;
+}
+
+// === Return Policies ===
+message ReturnPolicies {
+  option (gen_bq_schema.bigquery_opts).table_name = "returns";
+  optional int64 account_id = 1;
+  repeated google.shopping.merchant.accounts.v1.OnlineReturnPolicy returns = 2;
+}
+
+// === Promotions ===
+message Promotions {
+  option (gen_bq_schema.bigquery_opts).table_name = "promotions";
+  optional int64 account_id = 1;
+  repeated google.shopping.merchant.promotions.v1.Promotion promotions = 2;
+}
+
+// === Reports Settings ===
+message ReportsSettings {
+  option (gen_bq_schema.bigquery_opts).table_name = "reports";
+  optional int64 account_id = 1;
+  optional bool has_market_insights = 2;
+  repeated ReportRowDiagnostics structured_data_issues = 3;
+}
+
+message ReportRowDiagnostics {
+  optional string id = 1;
+  optional string offer_id = 2;
+  repeated ProductViewItemIssue item_issues = 3;
+}
+
+message ProductViewItemIssue {
+  optional ProductViewItemIssueType type_ = 1 [json_name = "type_"];
+  optional ProductViewItemIssueSeverity severity = 2;
+  optional string resolution = 3;
+}
+
+message ProductViewItemIssueType {
+  optional string code = 1;
+  optional string canonical_attribute = 2;
+}
+
+message ProductViewItemIssueSeverity {
+  optional string aggregated_severity = 1;
+  repeated ProductViewItemIssueSeverityContext severity_per_reporting_context = 2;
+}
+
+message ProductViewItemIssueSeverityContext {
+  optional string reporting_context = 1;
+  repeated string disapproved_countries = 2;
+  repeated string demoted_countries = 3;
 }
