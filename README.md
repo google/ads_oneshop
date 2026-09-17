@@ -87,6 +87,14 @@ Click here to open the [tutorial in Google Cloud Shell](https://console.cloud.go
     [public group](https://groups.google.com/g/ads-oneshop) as pointed out
     previously.
 *   After making sure you joined the group, copy the
-    [template](https://lookerstudio.google.com/c/u/0/reporting/8b2138b7-6fd2-4c99-9910-a5f5b109015e/page/2RkaD).
+    [template](https://datastudio.google.com/reporting/2927ffd9-0ba8-4b96-b3dd-72671ff97a5d).
 *   When making a copy of the template, you'll see a popup asking you to map the "Original Data Source" to a "New Data Source", **don't** select your newly created tables just now. Instead, just click "Copy Report".
 *   In the new dashboard that you just created, go through the [steps to update the data sources](https://cloud.google.com/looker/docs/studio/edit-a-data-source-article) and select your newly created tables.
+
+### Important Update:
+
+** Content API to Merchant API (MAPI) Migration **
+
+MEX4P has officially transitioned its data pipelines from the legacy **Content API for Shopping** to the new **Google Merchant API (MAPI)**.
+
+*(Note: If you have a custom local deployment, please ensure you pull the latest changes from the `main` branch to utilize the new MAPI endpoints.)*
