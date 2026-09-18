@@ -9,7 +9,7 @@ google-cloud-bigquery
 google-cloud-storage
 six
 absl-py
-apache-beam[gcp]==2.69.0
+apache-beam[gcp]==2.75.0
 protobuf
 etils[epath-gcs]
 google-cloud-secret-manager
@@ -20,3 +20,4 @@ google-shopping-merchant-reports
 # pin for artifact registry
 regex==2024.11.6
 typing_extensions
+gcsfs==2026.6.0
