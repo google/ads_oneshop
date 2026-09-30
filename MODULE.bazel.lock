@@ -265,7 +265,7 @@
     "@@rules_oci+//oci:extensions.bzl%oci": {
       "general": {
         "bzlTransitiveDigest": "KHcdN2ovRQGX1MKsH0nGoGPFd/84U43tssN2jImCeJU=",
-        "usagesDigest": "LmGdMAlh061unHC+7QJ/pF302IYd9BJYfaXKtSPJQ3I=",
+        "usagesDigest": "QR7M7jUQ9Dw2IJn+W9XBQDR5DIvPTFBfXbS2lK4k420=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -277,7 +277,7 @@
               "scheme": "https",
               "registry": "index.docker.io",
               "repository": "apache/beam_python3.13_sdk",
-              "identifier": "sha256:10cf8bedf0a3e28095159cf7c94d4d33fef8b57877f20f46fcd0ac16644333d6",
+              "identifier": "sha256:9c7de2734b44080f08d1d44985588062bcbcca93f6f2c8083552a63dba5cd777",
               "platform": "linux/amd64",
               "target_name": "oci_beam_python_linux_amd64",
               "bazel_tags": []
@@ -291,7 +291,7 @@
               "scheme": "https",
               "registry": "index.docker.io",
               "repository": "apache/beam_python3.13_sdk",
-              "identifier": "sha256:10cf8bedf0a3e28095159cf7c94d4d33fef8b57877f20f46fcd0ac16644333d6",
+              "identifier": "sha256:9c7de2734b44080f08d1d44985588062bcbcca93f6f2c8083552a63dba5cd777",
               "platforms": {
                 "@@platforms//cpu:x86_64": "@oci_beam_python_linux_amd64"
               },

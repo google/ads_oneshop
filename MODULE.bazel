@@ -46,11 +46,6 @@ pip.parse(
     python_version = python_version,
     requirements_lock = "//:requirements_lock.txt",
 )
-pip.override(
-    file = "gcsfs-2025.12.0-py3-none-any.whl",
-    patch_strip = 1,
-    patches = ["//:gcsfs_chunk_align.patch"],
-)
 use_repo(pip, "acit_deps")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
@@ -73,8 +68,8 @@ oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.toolchains(name = "oci_tools")
 oci.pull(
     name = "oci_beam_python",
-    # 2.69.0
-    digest = "sha256:10cf8bedf0a3e28095159cf7c94d4d33fef8b57877f20f46fcd0ac16644333d6",
+    # 2.75.0
+    digest = "sha256:9c7de2734b44080f08d1d44985588062bcbcca93f6f2c8083552a63dba5cd777",
     image = "docker.io/apache/beam_python3.13_sdk",
     platforms = [
         "linux/amd64",
